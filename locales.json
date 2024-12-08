@@ -1,0 +1,13 @@
+{
+	"defaultLocale": "en-GB",
+	"resources": 
+		[{
+			"en-GB": {
+				"MessageFormat": "Message Format",
+				"CustomerGUID": "Customer Identifier",
+				"CustomerName": "Customer Name",
+				"SecretKey": "Secret Key",
+				"PluginDisplayname": "Teams"
+			}
+		}]	
+}

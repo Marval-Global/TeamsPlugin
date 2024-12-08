@@ -1,0 +1,425 @@
+﻿<script type="text/javascript" src="Template.js"></script>
+<template>
+    <style>
+        .pluginWrapper {
+            display: none;
+        }
+
+        .contactSearcher .telephone {
+            width: 86px;
+        }
+
+        .MarvalSoftware-Teams {
+            display: none;
+        }
+
+        .window .MarvalSoftware-Teams {
+            display: block;
+        }
+
+        .MarvalSoftware-Teams {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border: none;
+        }
+
+        .TeamsWindow {
+            border: 0px;
+        }
+
+        .MarvalSoftware-Teams a {
+            color: #3B73AF;
+        }
+
+        .MarvalSoftware-Teams > .header {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            line-height: 0px;
+        }
+
+            .MarvalSoftware-Teams > .header > a {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                right: 0;
+                text-decoration: none;
+                border: none;
+            }
+
+        .MarvalSoftware-Teams > .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 550px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
+        }
+
+        .chatbot-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</template>
+<!--script type="text/javascript" src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script-->
+<div class="MarvalSoftware-Teams">
+</div>
+<script>
+    (function () {
+
+        var Teams = null
+        var MarvalSoftware = window.top.MarvalSoftware;
+        var $ = window.top.$;
+        MarvalSoftware.Plugins.define("MarvalSoftware-Plugins-Teams",
+            {
+                _pluginPath: null,
+                _element: null,
+                _imageElement: null,
+                _contactEmail: "...",
+                _pluginWindow: null,
+                _popupBody: null,
+                init: function () {
+                    Teams = this
+                    var currentUrl = window.top.location.href;
+                    var PWelement = $('#ctl00_ctl00_cph_entityHeaderText').text();
+                    if (currentUrl.includes("Plugin.aspx") && PWelement == 'MarvalSoftware.Plugins.Teams') {
+
+
+                        var that = this;
+                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
+                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', true);
+
+                        function createCustomer() {
+                            var customernamecheck = $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value').val();
+
+                            console.log("Customer contact value is", customernamecheck)
+                            $('#errorText').text("");
+                            if (customernamecheck === "" || customernamecheck === null) {
+
+                                console.log("Not running get request");
+
+                                $('#errorText').text("Please type a customer name under Global Settings below before activating the integration.");
+                            } else {
+                                //  $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', false);
+                                //   $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', false);
+                                $('#errorText').text("");
+                                console.log("Running get request");
+                                var postData = {
+                                    "hostSource": window.top.location.href,
+                                    "customerName": customernamecheck,
+                                    "action": "createTeams"
+                                };
+                                $.ajax({
+                                    type: "POST",
+                                    url: that._getPluginPath() + "Handler.ashx",
+                                    contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                                    dataType: "json", // Expect JSON response
+                                    data: postData,
+                                    success: function (result) {
+                                        console.log("Result is ", result)
+                                        console.log("Secret key is ", result.secretkey);
+                                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val(result.guid);
+                                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').val(result.secretkey);
+                                        if (result.guid && result.secretkey) {
+                                            $('#successText').text("Your account was created successfully, please wait...");
+                                            $('#ctl00_ctl00_cph_apply_fakeApplyButton').click();
+                                        }
+                                        // if (Object.keys(result).length > 0) {
+                                        //     this._errorPopup(result);
+                                        // } else {
+                                        //     this._popup();
+                                        // }
+                                    }.bind(this)
+                                });
+                            }
+                        }
+                        console.log("PWelement is ", PWelement);
+                        // var contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
+                        //    console.log("Contact email is ", contactEmail);
+                        $('#ctl00_ctl00_cph_maintenance_pluginDetailsFieldSet').before(`
+                   <br> <div>
+   <fieldset>
+    <legend>Teams Integration</legend>
+
+    <!-- <div id="itemsContainer"></div> -->
+
+    <span id="teamsPluginActivated">You have not yet activated the Teams Integration</span><br><br>
+    <button type="button" style="cursor:pointer" id="installPlugin">Activate Teams Integration</button><br>
+    <div style="cursor:pointer;display:none;" id="additionalInstructions">
+    <button type="button" style="cursor:pointer">Load Additional Instructions</button><br> <br>
+    <span>
+        Now that you have initiated the install, please follow the additional instructions below. <br><br>
+        This code will need to be placed into <b>Maintenance</b> | <b>Service</b> | <b>Self Service Customisation</b> under the AI Chatbot tab under the Private Key, Public Key and Code Snippet sections, respectively.<br>
+
+        <a href="">Download Private Key</a><br>
+        <a href="">Download Public Key</a><br>
+        <a href="">Download Code Snippet Key</a><br>
+        The Issuer for the chatbot, is https://chatbot.marval.cloud/<br><br>
+     <span class="formSpan">
+            <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button>
+            <div id="responseContainer">
+                <pre id="formattedResponse"></pre>
+            </div>
+        </span>
+
+    </div>
+
+    <!--<a href="https://azure.microsoft.com/en-us/pricing/details/bot-services/">Azure Bot Pricing</href> -->
+
+      <div style="color:red" id="errorText"></div>
+       <div style="color:green" id="successText"></div>
+    <div id="savebuttonConfirm" style="color:green;font-weight:bold; display: none"><br><span style="color:green">Install Initiated</span><br></div>
+    </fieldset>
+    <br><br>
+    <fieldset style="display: none;cursor:pointer;width: 800px" id="testPlugin">
+        <legend>Test Teams Integration</legend><br>
+
+    </fieldset>
+    </div>
+   `);
+
+                        window.top.document.getElementById("installPlugin").onclick = createCustomer;
+                    } else if (currentUrl.includes("Request.aspx")) {
+                        this._requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
+                        if (this._requestNumber) {
+                            this._setUpQuickMenu();
+                        }
+                    }
+
+                    if ($('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val()) {
+                        $('#installPlugin').hide();
+                        $('#additionalInstructions').show();
+                        $('#teamsPluginActivated').hide();
+                        // $('#testPlugin').show();
+                        //  console.log("Have a value in the box");
+                    } else {
+
+                        // console.log("Do not have a value in the box")
+                    }
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var page = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage();
+
+                        // attach the display element
+                        var template = document.querySelector('template').content;
+                        this._element = window.top.document.importNode(template, true);
+                        this._imageElement = this._element.querySelector('#MarvalSoftware-Plugins-Teams');
+                        //   page._contactSearcher._extensionInput.parentElement.insertBefore(this._element, page._contactSearcher._extensionInput.nextSibling);
+                    }.bind(this));
+                }, // End init
+                _setTeamsLink: function () {
+                    String.prototype.format = function () {
+                        var args = arguments;
+                        return this.replace(/{([0-9]+)}/g, function (match, index) {
+                            return typeof args[index] == 'undefined' ? match : args[index];
+                        });
+                    };
+                    try {
+                        var contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
+                        console.log("Contact email is ", contactEmail);
+                        // var contactName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._contactSearcher._nameInput.value.split(', ')[1].split(' ')[0];
+                        // var requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._requestTypeAcronym + "-" + MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
+                        //  var currentUserName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._mainMenu._menuBar._menuItems[2]._element.children[0].innerHTML.split(' ')[0];
+                        // var teamsLink = "https://teams.microsoft.com/l/chat/0/0?users={0}&message=Hi {1}, {2} from IT is here, do you have a moment to talk about {3}?".format(contactEmail, contactName, currentUserName, requestNumber);
+                        //  this._imageElement.src = this._getPluginPath() + "img/microsoft-teams.png";
+                        //   this._imageElement.setAttribute("onClick", "window.open('" + teamsLink + "', '_blank');");
+                        this._imageElement.style.display = "inline";
+                    } catch {
+                        // hide the button if any of the parameters can not be loaded
+                        //this._imageElement.style.display = "none";
+                    }
+                }, // End _setTeamsLink
+
+                _getPluginPath: function () {
+                    return this.attributes["data-pluginpath"].value;
+                },
+                _getPluginId: function () {
+                    return this.attributes["data-pluginid"].value;
+                },
+                _getPluginCulture: function () {
+                    return this.attributes["data-pluginculture"].value;
+                },
+                _getString: function (key, formatObject) {
+                    return MarvalSoftware.Plugins.PluginResourceManager.getInstance().getString(this._getPluginId(), key, this._getPluginCulture(), formatObject);
+                },
+                _getUserEmail: async function () {
+                    const url = "/MSM/RFP/Forms/Profile.aspx";
+
+                    // Create and style the text content
+                    let fetchedDom = $(await (await fetch(url)).text());
+                    if (undefined == fetchedDom.find("#ctl00_cph_notifyMethod"))
+                        return "";
+                    else if (fetchedDom.find("#ctl00_cph_notifyMethod").text() != "Email") {
+                        return "";
+                    } else {
+                        return fetchedDom.find("#ctl00_cph_notifyAddress").text();
+                    }
+                },
+                _startChat: function (sender, e) {
+
+                    $("*").remove("#ct100_overlay_id4");
+                    $("*").remove(".chatbot-container")
+
+                    $("body").append(`
+                        <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
+                            <iframe id="chatbot-iframe"
+                                    src=""
+                                    title="Marval Chatbot"
+                                    allow="camera; microphone" style="position: absolute; z-index: 1000; border: none; height: 100%; width: 100%"></iframe>
+                        </div>
+                    `);
+
+                    $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client");
+                },
+                _setUpQuickMenu: function () {
+                    var styleElement = window.top.document.createElement("style");
+                    window.top.document.body.appendChild(styleElement);
+                    var pathFormatted = this._getPluginPath().replace(" ", "%20");
+                    var quickMenuStr = ".MarvalSoftware-Teams-quick-menu-item { background-image: url(" + pathFormatted + "img/teams-32.png); }";
+                    styleElement.sheet.insertRule(quickMenuStr, 0);
+                    var quickMenuId = window.top.document.querySelector(".quickMenu").id;
+                    var quickMenu = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getControl(quickMenuId);
+                    quickMenu.addMenuItem({
+                        Identifier: "MarvalSoftware-Teams",
+                        Label: this._getString("@@PluginDisplayname"),
+                        HRef: "javascript:void(0);",
+                        CssClass: "MarvalSoftware-Teams-quick-menu-item"
+                    });
+                    quickMenu.onMenuItemClicked.subscribe(function (sender, e) {
+                        if (e.menuItem.getIdentifier() === "MarvalSoftware-Teams") {
+                            //this._preRequisiteCheck();
+                            this._popup();
+                        }
+                    }, this);
+                },
+                _onBtnClick: function () {
+                    event.preventDefault();
+                    Teams._startChat();
+                },
+                _createWindowElements: function () {
+                    var that = this;
+                    setTimeout(() => {
+                        $('.MarvalSoftware-Teams').append(`
+                           <div id="TeamsContainer">
+                            </div>
+                      `);
+                    }, 200);
+
+                    setTimeout(() => {
+                        const div = window.top.document.createElement("div");
+                        div.className = "TeamsWindow";
+                        div.id = "TeamsPopup"
+
+                        const textContent = window.top.document.createElement("p");
+                        that._contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
+                        textContent.innerHTML = 'Chat to the contact for this ticket? <span style="font-weight:bold" id="contactEmailAddress"> (' + that._contactEmail + ') </span>';
+
+                        //this._getUserEmail().then(response => {
+                        //    that._contactEmail = response
+                        //    textContent.innerHTML = 'Search for people to chat to as this contact <span style="font-weight:bold" id="contactEmailAddress"> (' + that._contactEmail + ') </span>';
+                        //});
+                        textContent.style.textAlign = "center";
+                        textContent.style.margin = "20px 0";
+
+                        const spanResponseInput = window.top.document.createElement("span");
+                        spanResponseInput.className = "responseInput";
+
+                        const dropdown = $("<ul>").addClass("dropdown-list").css({
+                            position: "absolute",
+                            display: "none",
+                            listStyle: "none",
+                            border: "1px solid #ccc",
+                            maxHeight: "150px",
+                            overflowY: "auto",
+                            backgroundColor: "#fff",
+                            padding: "0",
+                            margin: "0",
+                            zIndex: "1000"
+                        });
+                        $(window.top.document.body).append(dropdown);
+                        // Create and style the button
+                        const Button = window.top.document.createElement("button");
+                        Button.innerHTML = "Start a chat";
+                        Button.style.marginTop = "20px";
+                        Button.className = "initiate";
+                        Button.style.width = "50%";
+                        Button.onclick = that._onBtnClick;
+                        Button.style.cursor = "pointer";
+
+                        const loadingIndicator = window.top.document.createElement("div");
+                        loadingIndicator.className = "loadingIndicator";
+                        loadingIndicator.style.display = "none"; // Initially hidden
+                        loadingIndicator.innerText = "Searching..."; // Simple loading text (or use an icon)
+
+
+
+                        // Append text and button to the div
+                        div.appendChild(textContent);
+                        div.appendChild(spanResponseInput);
+                        div.appendChild(loadingIndicator);
+
+                        div.appendChild(Button);
+                        div.style.display = "flex";
+                        div.style.flexDirection = "column";
+                        div.style.alignItems = "center";
+                        div.style.justifyContent = "center";
+                        div.style.border = "none";
+                        div.style.padding = "0px";
+                        // div.style.width = "300px";
+                        div.style.width = "100%";
+                        div.style.height = "300px";
+
+                        //    $(document).ready(function() {
+                        // First, make sure the element exists
+                        // div.appendChild(Button);
+                        that.appendChild(div);
+
+                    }, 400);
+                },
+                _popup: function () {
+                    var that = this;
+                    if (!this._pluginWindow) {
+                        this._pluginWindow = new MarvalSoftware.UI.Window({
+                            appendToElement: window.top.document.getElementById("aspnetForm"),
+                            title: this._getString("@@PluginDisplayname"),
+                            height: 400,
+                            width: 600,
+                            minHeight: 262,
+                            minWidth: 432,
+                            isResizable: true,
+                            isMaximizable: true,
+                            bodyElement: this
+                        });
+
+                        this._createWindowElements();
+                        this._renderElement();
+                    }
+                    if (!this._pluginWindow.isVisible()) {
+                        this._pluginWindow.centerToViewport();
+                    }
+                    this._pluginWindow.show();
+                },
+                _renderElement: function () {
+                },
+                _preProcessResourceString: function (content) {
+                    var resourceTagRegEx = /@@\w+\b/g;
+                    var match = resourceTagRegEx.exec(content);
+                    while (match) {
+                        var foundTag = match[0];
+                        var resourcedKey = this._getString(foundTag);
+                        content = content.replace(foundTag, resourcedKey);
+                        var match = resourceTagRegEx.exec(content);
+                    }
+                    return content;
+                }
+            });
+    })();
+</script>
