@@ -70,7 +70,7 @@
         }
     </style>
 </template>
-<!--script type="text/javascript" src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script-->
+<script type="text/javascript" src="msal-browser.min.js"></script>
 <div class="MarvalSoftware-Teams">
 </div>
 <script>
@@ -224,7 +224,6 @@
                     };
                     try {
                         var contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
-                        console.log("Contact email is ", contactEmail);
                         // var contactName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._contactSearcher._nameInput.value.split(', ')[1].split(' ')[0];
                         // var requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._requestTypeAcronym + "-" + MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
                         //  var currentUserName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._mainMenu._menuBar._menuItems[2]._element.children[0].innerHTML.split(' ')[0];
@@ -263,21 +262,67 @@
                         return fetchedDom.find("#ctl00_cph_notifyAddress").text();
                     }
                 },
-                _startChat: function (sender, e) {
+                _startChat: async function (sender, e) {
 
-                    $("*").remove("#ct100_overlay_id4");
                     $("*").remove(".chatbot-container")
 
-                    $("body").append(`
-                        <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
-                            <iframe id="chatbot-iframe"
-                                    src=""
-                                    title="Marval Chatbot"
-                                    allow="camera; microphone" style="position: absolute; z-index: 1000; border: none; height: 100%; width: 100%"></iframe>
-                        </div>
-                    `);
+                    var id = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID")).text()
 
-                    $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client");
+                    const msalInstance = await msal.createStandardPublicClientApplication({
+                        auth: {
+                            clientId: id,
+                            authority: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+                        },
+                    });
+
+                    var loginRequest = {
+                        scopes: ["https://graph.microsoft.com/.default"],
+                        redirectStartPage: "https://dev.marvalaustralia.com.au/MSM/"
+                    };
+
+                    try {
+                        var response = await msalInstance.loginPopup(loginRequest);
+
+                        try {
+                            const authResp = await fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + "david.hancock@marval.com.au" + "'", {
+
+                                method: "GET",
+                                headers: new Headers({
+                                    "Authorization": "Bearer " + response.accessToken,
+                                })
+                            })
+
+                            $("body").append(`
+                            <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
+                                <iframe id="chatbot-iframe"
+                                        src=""
+                                        title="Marval Chatbot"
+                                        allow="camera; microphone" style="position: absolute; z-index: 1000; border: none; height: 100%; width: 100%"></iframe>
+                            </div>
+                            `);
+
+                            $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client");
+
+                            let iframe = $("#chatbot-iframe")
+
+                            iframe.contents().find("#chatBubble > p").text("Chat with the contact for this request here!");
+                            $("#TeamsError").remove();
+                            $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: green;'>Success!</p></div>")
+                            setTimeout(function () {
+                                Teams._pluginWindow.hide();
+                            },1000)
+                        } catch (err) {
+                            $("#TeamsError").remove();
+                            $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find a Teams contact for " + Teams._contactEmail + "</p></div>")
+                            console.error("Teams search error:\n",err)
+                        }
+
+                    } catch (err) {
+                        $("#TeamsError").remove();
+                        $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to authenticate with Microsoft</p></div>")
+                        console.error("MS Auth error:\n",err)
+                    }
+
                 },
                 _setUpQuickMenu: function () {
                     var styleElement = window.top.document.createElement("style");
@@ -322,12 +367,10 @@
                         that._contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
                         textContent.innerHTML = 'Chat to the contact for this ticket? <span style="font-weight:bold" id="contactEmailAddress"> (' + that._contactEmail + ') </span>';
 
-                        //this._getUserEmail().then(response => {
-                        //    that._contactEmail = response
-                        //    textContent.innerHTML = 'Search for people to chat to as this contact <span style="font-weight:bold" id="contactEmailAddress"> (' + that._contactEmail + ') </span>';
-                        //});
                         textContent.style.textAlign = "center";
-                        textContent.style.margin = "20px 0";
+                        textContent.style.alignSelf = "center";
+                        textContent.style.marginTop = "60px";
+                        
 
                         const spanResponseInput = window.top.document.createElement("span");
                         spanResponseInput.className = "responseInput";
@@ -375,7 +418,7 @@
                         div.style.padding = "0px";
                         // div.style.width = "300px";
                         div.style.width = "100%";
-                        div.style.height = "300px";
+                        div.style.height = "100%";
 
                         //    $(document).ready(function() {
                         // First, make sure the element exists
@@ -390,9 +433,9 @@
                         this._pluginWindow = new MarvalSoftware.UI.Window({
                             appendToElement: window.top.document.getElementById("aspnetForm"),
                             title: this._getString("@@PluginDisplayname"),
-                            height: 400,
-                            width: 600,
-                            minHeight: 262,
+                            height: 220,
+                            width: 432,
+                            minHeight: 220,
                             minWidth: 432,
                             isResizable: true,
                             isMaximizable: true,

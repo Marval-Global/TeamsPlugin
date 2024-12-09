@@ -33,6 +33,7 @@ public class Handler : PluginHandler
     private string AssignmentGroups { get; set; }
     private string ExcludeDescriptionMatch { get; set; }                            
     private string CustomerGUID { get { return this.GlobalSettings["@@CustomerGUID"]; } }
+    private string ClientID { get { return this.GlobalSettings["@@ClientID"]; } }
     private string CustomerName { get { return this.GlobalSettings["@@CustomerName"]; } }
   
 
@@ -100,10 +101,10 @@ private string PostRequest(string url, string data)
             Log.Information("Have data2 " + response);
             context.Response.Write("Hi");
 
-           } else if (getParamVal == "databaseValue") {
+           } else if (getParamVal == "ClientID") {
              // string json = this.GetCustomersJSON(lastLocation,AssignmentGroups,ExcludeDescriptionMatch);
              
-             // context.Response.Write(json);
+              context.Response.Write(ClientID);
               } else if (getParamVal == "GoogleMapsAPIKey") {
               //    context.Response.Write(GoogleMapsAPIKey); 
             } else {
