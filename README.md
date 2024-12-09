@@ -17,6 +17,7 @@ This creates an instance of Teams for you on the chatbot server by creating a pu
 The next steps that need to be taken are the following:
 * Creation of the chatbot and App Registration in your Azure Tenant.
 * Setting up the chatbot tab in Self Service Customisation.
+* Creation of an App Registration with the permissions `User.ReadBasic.All`, setting the application ID under Application (Client) ID in the plugin page.
 
 
 ## Contributing

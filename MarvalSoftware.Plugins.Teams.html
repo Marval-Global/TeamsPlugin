@@ -284,13 +284,13 @@
                         var response = await msalInstance.loginPopup(loginRequest);
 
                         try {
-                            const authResp = await fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + "david.hancock@marval.com.au" + "'", {
+                            const authResp = await (await fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + "david.hancock@marval.com.au" + "'", {
 
                                 method: "GET",
                                 headers: new Headers({
                                     "Authorization": "Bearer " + response.accessToken,
                                 })
-                            })
+                            })).json()
 
                             $("body").append(`
                             <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
@@ -301,7 +301,11 @@
                             </div>
                             `);
 
-                            $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client");
+                            console.log(authResp.value[0].id)
+
+                            console.log("https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id)
+
+                            $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id);
 
                             let iframe = $("#chatbot-iframe")
 
@@ -428,6 +432,7 @@
                     }, 400);
                 },
                 _popup: function () {
+                    $("#TeamsError").remove();
                     var that = this;
                     if (!this._pluginWindow) {
                         this._pluginWindow = new MarvalSoftware.UI.Window({
