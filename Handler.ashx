@@ -34,6 +34,7 @@ public class Handler : PluginHandler
     private string ExcludeDescriptionMatch { get; set; }                            
     private string CustomerGUID { get { return this.GlobalSettings["@@CustomerGUID"]; } }
     private string ClientID { get { return this.GlobalSettings["@@ClientID"]; } }
+    private string TenantID { get { return this.GlobalSettings["@@TenantID"]; } }
     private string CustomerName { get { return this.GlobalSettings["@@CustomerName"]; } }
   
 
@@ -107,6 +108,8 @@ private string PostRequest(string url, string data)
               context.Response.Write(ClientID);
               } else if (getParamVal == "GoogleMapsAPIKey") {
               //    context.Response.Write(GoogleMapsAPIKey); 
+            } else if (getParamVal == "TenantID") {
+               context.Response.Write(TenantID);
             } else {
                context.Response.Write("No valid parameter requested");
             }

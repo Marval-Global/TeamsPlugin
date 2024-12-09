@@ -267,6 +267,7 @@
                     $("*").remove(".chatbot-container")
 
                     var id = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID")).text()
+                    var tenantID = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID")).text() 
 
                     const msalInstance = await msal.createStandardPublicClientApplication({
                         auth: {
@@ -305,7 +306,7 @@
 
                             console.log("https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id)
 
-                            $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id);
+                            $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id + "&tenantId=" + tenantID);
 
                             let iframe = $("#chatbot-iframe")
 

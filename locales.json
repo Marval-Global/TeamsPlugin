@@ -8,7 +8,8 @@
 				"CustomerName": "Customer Name",
 				"SecretKey": "Secret Key",
 				"PluginDisplayname": "Teams",
-				"ClientID": "Application (Client) ID"
+				"ClientID": "Application (Client) ID",
+				"TenantID": "Azure Tenant ID"
 			}
 		}]	
 }
