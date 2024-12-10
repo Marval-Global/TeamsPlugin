@@ -117,12 +117,13 @@ private string PostRequest(string url, string data)
           case "POST":
              var hostSource = context.Request.Form["hostSource"];
              var customerName = context.Request.Form["customerName"];
+             var tenantId = context.Request.Form["TenantID"];
              var action = context.Request.Form["action"];
              Log.Information("Have hostsource as " + hostSource);
              Log.Information("Have customerName as " + customerName);
              Log.Information("Have action as " + action);
              if (action == "createTeams") {
-                var response = PostRequest("https://chatbot.marval.cloud/api/server/createCustomer","{ \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
+                var response = PostRequest("https://chatbot.marval.cloud/api/server/createCustomer","{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
                 Log.Information("Have data2 back as " + response);
                 context.Response.Write(response);
                 
