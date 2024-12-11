@@ -71,10 +71,30 @@ private string PostRequest(string url, string data)
             }
         }
     }
+    catch (WebException webEx)
+    {
+        // If we have a response, we can read the error message from the response body
+        if (webEx.Response != null)
+        {
+            using (var errorResponse = (HttpWebResponse)webEx.Response)
+            {
+                using (var reader = new StreamReader(errorResponse.GetResponseStream()))
+                {
+                    string errorText = reader.ReadToEnd();
+                    // Return or log the error text
+                    Log.Information("Response error is ", errorText);
+                    return errorText;
+                }
+            }
+        }
+
+        // If we have no response, return the exception message
+        return webEx.Message;
+    }
     catch (Exception ex)
     {
-        Log.Error(ex, "Error in PostRequest method");
-        return "Error: " + ex.Message;
+        // Handle other exceptions
+        return ex.ToString();
     }
 }
 
@@ -117,17 +137,36 @@ private string PostRequest(string url, string data)
           case "POST":
              var hostSource = context.Request.Form["hostSource"];
              var customerName = context.Request.Form["customerName"];
-             var tenantId = context.Request.Form["TenantID"];
+             var tenantId = this.TenantID;
              var action = context.Request.Form["action"];
              Log.Information("Have hostsource as " + hostSource);
              Log.Information("Have customerName as " + customerName);
              Log.Information("Have action as " + action);
-             if (action == "createTeams") {
-                var response = PostRequest("https://chatbot.marval.cloud/api/server/createCustomer","{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
-                Log.Information("Have data2 back as " + response);
-                context.Response.Write(response);
-                
-             } else if (action == "") {
+             if (action == "createTeams")
+{
+    try
+    {
+        // Construct the request payload
+       
+
+        // Make the POST request
+        var response = PostRequest("https://chatbot.marval.cloud/api/server/createCustomer","{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
+        Log.Information("Have data2 back as " + response);
+         // context.Response.Write(context.Response.StatusCode);
+        // Write the response back
+        context.Response.Write(response);
+    }
+    catch (Exception ex)
+    {
+        // Log the error
+      //  Log.Error("Error occurred while creating teams: " + ex.Message, ex);
+        Log.Information("Error in createCustomer method" + ex);
+        // Return an error response
+        context.Response.StatusCode = 500; // Internal Server Error
+        context.Response.ContentType = "application/json";
+        context.Response.Write("{\"error\":\"An error occurred while processing your request.\"}");
+    }
+} else if (action == "") {
 
              } else {
 
