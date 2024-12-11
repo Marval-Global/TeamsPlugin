@@ -100,20 +100,17 @@
 
                         function createCustomer() {
                             var customernamecheck = $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value').val();
-                         
+
                             $('#installPlugin').prop('disabled', true);
-                            console.log("Customer contact value is", customernamecheck)
                             $('#errorText').text("");
                             if (customernamecheck === "" || customernamecheck === null) {
 
-                                console.log("Not running get request");
 
                                 $('#errorText').text("Please type a customer name under Global Settings below before activating the integration.");
                             } else {
                                 //  $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', false);
                                 //   $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', false);
                                 $('#errorText').text("");
-                                console.log("Running get request");
                                 var postData = {
                                     "hostSource": window.top.location.href,
                                     "customerName": customernamecheck,
@@ -130,8 +127,6 @@
                                         if (result.error) {
                                             $('#errorText').text(result.error);
                                         }
-                                        console.log("Result is ", result)
-                                        console.log("Secret key is ", result.secretkey);
                                         $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val(result.guid);
                                         $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').val(result.secretkey);
                                         if (result.guid && result.secretkey) {
@@ -145,16 +140,12 @@
                                         // }
                                     },
                                     error: function (err) {
-                                        console.log("Error ", err);
                                         $('#errorText').text(JSON.stringify(err));
                                     }
                                         .bind(this)
                                 });
                             }
                         }
-                        console.log("PWelement is ", PWelement);
-                        // var contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
-                        //    console.log("Contact email is ", contactEmail);
                         $('#ctl00_ctl00_cph_maintenance_pluginDetailsFieldSet').before(`
                    <br> <div>
    <fieldset>
@@ -210,10 +201,8 @@
                         $('#additionalInstructions').show();
                         $('#teamsPluginActivated').hide();
                         // $('#testPlugin').show();
-                        //  console.log("Have a value in the box");
                     } else {
 
-                        // console.log("Do not have a value in the box")
                     }
                     document.addEventListener('DOMContentLoaded', function () {
                         var page = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage();
@@ -277,7 +266,7 @@
                     $("*").remove(".chatbot-container")
 
                     var id = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID")).text()
-                    var tenantID = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID")).text() 
+                    var tenantID = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID")).text()
 
                     const msalInstance = await msal.createStandardPublicClientApplication({
                         auth: {
@@ -312,11 +301,9 @@
                             </div>
                             `);
 
-                            console.log(authResp.value[0].id)
-
-                            console.log("https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id)
-
                             $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id + "&tenantId=" + tenantID);
+
+                            $("*").find(".chatbot-container").hide().fadeIn(300, function () {})
 
                             let iframe = $("#chatbot-iframe")
 
@@ -325,17 +312,19 @@
                             $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: green;'>Success!</p></div>")
                             setTimeout(function () {
                                 Teams._pluginWindow.hide();
-                            },1000)
+                            }, 1000)
                         } catch (err) {
                             $("#TeamsError").remove();
                             $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find a Teams contact for " + Teams._contactEmail + "</p></div>")
-                            console.error("Teams search error:\n",err)
+                            console.error("Teams search error:\n", err)
+                            $("*").remove(".chatbot-container")
                         }
 
                     } catch (err) {
                         $("#TeamsError").remove();
                         $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to authenticate with Microsoft</p></div>")
-                        console.error("MS Auth error:\n",err)
+                        $("*").remove(".chatbot-container")
+                        console.error("MS Auth error:\n", err)
                     }
 
                 },
@@ -365,82 +354,83 @@
                     Teams._startChat();
                 },
                 _createWindowElements: function () {
-                    var that = this;
-                    setTimeout(() => {
-                        $('.MarvalSoftware-Teams').append(`
+                    $('.MarvalSoftware-Teams').append(`
                            <div id="TeamsContainer">
                             </div>
                       `);
-                    }, 200);
 
-                    setTimeout(() => {
-                        const div = window.top.document.createElement("div");
-                        div.className = "TeamsWindow";
-                        div.id = "TeamsPopup"
+                    $("marvalsoftware-plugins-teams").empty()
 
-                        const textContent = window.top.document.createElement("p");
-                        that._contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
-                        textContent.innerHTML = 'Chat to the contact for this ticket? <span style="font-weight:bold" id="contactEmailAddress"> (' + that._contactEmail + ') </span>';
+                    var isConnected = $("*").find("#chatbot-iframe").length > 0
 
-                        textContent.style.textAlign = "center";
-                        textContent.style.alignSelf = "center";
-                        textContent.style.marginTop = "60px";
-                        
+                    const div = window.top.document.createElement("div");
+                    div.className = "TeamsWindow";
+                    div.id = "TeamsPopup"
+                    $("#TeamsPopup").empty()
 
-                        const spanResponseInput = window.top.document.createElement("span");
-                        spanResponseInput.className = "responseInput";
+                    const textContent = window.top.document.createElement("p");
+                    Teams._contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
 
-                        const dropdown = $("<ul>").addClass("dropdown-list").css({
-                            position: "absolute",
-                            display: "none",
-                            listStyle: "none",
-                            border: "1px solid #ccc",
-                            maxHeight: "150px",
-                            overflowY: "auto",
-                            backgroundColor: "#fff",
-                            padding: "0",
-                            margin: "0",
-                            zIndex: "1000"
-                        });
-                        $(window.top.document.body).append(dropdown);
-                        // Create and style the button
-                        const Button = window.top.document.createElement("button");
-                        Button.innerHTML = "Start a chat";
-                        Button.style.marginTop = "20px";
-                        Button.className = "initiate";
-                        Button.style.width = "50%";
-                        Button.onclick = that._onBtnClick;
-                        Button.style.cursor = "pointer";
+                    if (isConnected)
+                        textContent.innerHTML = 'You\'re already chatting to this ticket\'s contact <span style="font-weight:bold" id="contactEmailAddress"> (' + Teams._contactEmail + ')</span>. Reconnect?';
+                    else
+                        textContent.innerHTML = 'Chat to the contact for this ticket? <span style="font-weight:bold" id="contactEmailAddress"> (' + Teams._contactEmail + ') </span>';
 
-                        const loadingIndicator = window.top.document.createElement("div");
-                        loadingIndicator.className = "loadingIndicator";
-                        loadingIndicator.style.display = "none"; // Initially hidden
-                        loadingIndicator.innerText = "Searching..."; // Simple loading text (or use an icon)
+                    textContent.style.textAlign = "center";
+                    textContent.style.alignSelf = "center";
+                    textContent.style.marginTop = "60px";
 
+                    const Button = window.top.document.createElement("button");
+                    Button.innerHTML = isConnected ? "Reconnect" : "Start a chat"
 
+                    Button.style.marginTop = "20px";
+                    Button.className = "initiate";
+                    Button.style.width = "50%";
+                    Button.onclick = Teams._onBtnClick;
+                    Button.style.cursor = "pointer";
 
-                        // Append text and button to the div
-                        div.appendChild(textContent);
-                        div.appendChild(spanResponseInput);
-                        div.appendChild(loadingIndicator);
+                    var Disconnect = null
 
-                        div.appendChild(Button);
-                        div.style.display = "flex";
-                        div.style.flexDirection = "column";
-                        div.style.alignItems = "center";
-                        div.style.justifyContent = "center";
-                        div.style.border = "none";
-                        div.style.padding = "0px";
-                        // div.style.width = "300px";
-                        div.style.width = "100%";
-                        div.style.height = "100%";
+                    if (isConnected) {
 
-                        //    $(document).ready(function() {
-                        // First, make sure the element exists
-                        // div.appendChild(Button);
-                        that.appendChild(div);
+                        Disconnect = window.top.document.createElement("button");
+                        Disconnect.innerHTML = "Disconnect";
 
-                    }, 400);
+                        Disconnect.style.marginTop = "20px";
+                        Disconnect.className = "disconnectChatbot";
+                        Disconnect.style.width = "50%";
+                        Disconnect.onclick = Teams._disconnectChat;
+                        Disconnect.style.cursor = "pointer";
+
+                    }
+
+                    const loadingIndicator = window.top.document.createElement("div");
+                    loadingIndicator.className = "loadingIndicator";
+                    loadingIndicator.style.display = "none"; // Initially hidden
+                    loadingIndicator.innerText = "Searching..."; // Simple loading text (or use an icon)
+
+                    div.appendChild(textContent);
+
+                    div.appendChild(Button);
+                    if (Disconnect != null) {
+                        div.appendChild(Disconnect);
+                    }
+                    div.style.display = "flex";
+                    div.style.flexDirection = "column";
+                    div.style.alignItems = "center";
+                    div.style.justifyContent = "center";
+                    div.style.border = "none";
+                    div.style.padding = "0px";
+                    div.style.width = "100%";
+                    div.style.height = "100%";
+
+                    Teams.appendChild(div);
+                },
+                _disconnectChat: function () {
+                    event.preventDefault();
+                    Teams._pluginWindow.hide() 
+                    $("*").find(".chatbot-container").fadeOut(300, function () { $("*").remove(".chatbot-container"); })
+                    $("#TeamsPopup").remove()
                 },
                 _popup: function () {
                     $("#TeamsError").remove();
@@ -449,35 +439,22 @@
                         this._pluginWindow = new MarvalSoftware.UI.Window({
                             appendToElement: window.top.document.getElementById("aspnetForm"),
                             title: this._getString("@@PluginDisplayname"),
-                            height: 220,
+                            height: 260,
                             width: 432,
-                            minHeight: 220,
+                            minHeight: 260,
                             minWidth: 432,
                             isResizable: true,
                             isMaximizable: true,
                             bodyElement: this
                         });
-
-                        this._createWindowElements();
-                        this._renderElement();
                     }
+
+                    this._createWindowElements();
+
                     if (!this._pluginWindow.isVisible()) {
                         this._pluginWindow.centerToViewport();
                     }
                     this._pluginWindow.show();
-                },
-                _renderElement: function () {
-                },
-                _preProcessResourceString: function (content) {
-                    var resourceTagRegEx = /@@\w+\b/g;
-                    var match = resourceTagRegEx.exec(content);
-                    while (match) {
-                        var foundTag = match[0];
-                        var resourcedKey = this._getString(foundTag);
-                        content = content.replace(foundTag, resourcedKey);
-                        var match = resourceTagRegEx.exec(content);
-                    }
-                    return content;
                 }
             });
     })();
