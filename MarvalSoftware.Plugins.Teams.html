@@ -189,7 +189,6 @@
    `);
 
                         window.top.document.getElementById("installPlugin").onclick = createCustomer;
-                        Teams._renderObjectLocationDropdown();
                         var field = $("label").filter(function () {
                             return $(this).text() == "@@AADObjectGUIDLocation";
                         }).parent()
@@ -198,7 +197,16 @@
                             return $(this).text() == "@@ClientID"
                         }).parent()
 
-                        window.top.document.getElementById("objectLocationDropdown").addEventListener("change", _onDropdown(field, clientField));
+                        field.append(`
+                        <select id="objectLocationDropdown" value="In Marval">
+                            <option value="In Marval">In Marval</option>
+                            <option value="From Microsoft">From Microsoft</option>
+                            <option value="In an Attribute">In an Attribute</option>
+                        </select>`)
+
+                        Teams._renderObjectLocationDropdown();
+
+                        window.top.document.getElementById("objectLocationDropdown").onchange = Teams._onDropdown;
 
                     } else if (currentUrl.includes("Request.aspx")) {
                         this._requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
@@ -255,16 +263,6 @@
                         return $(this).text() == "@@ClientID"
                     }).parent()
 
-                    function insertSpan() {
-                        field.remove("select");
-                        field.prepend(`
-                        <select id="objectLocationDropdown">
-                            <option value="In Marval"></option>
-                            <option value="From Microsoft"></option>
-                            <option value="In an Attribute"></option>
-                        </select>`)
-                    }
-
                     field.find("input").hide();
 
                     var aadObjectId = field.find("input").val();
@@ -272,37 +270,43 @@
                     switch (aadObjectId) {
                         case "entra":
                             clientField.hide();
-                            insertSpan();
                             field.find("select").val("In Marval");
 
                             break;
                         case "microsoft":
-                            clientField.find("label.largeLabel").text = "Application (Client) ID"
+                            clientField.find(".largeLabel").html("Application (Client) ID");
                             clientField.show();
-                            insertSpan();
                             field.find("select").val("From Microsoft");
                             break;
                         case "attribute":
-                            clientField.find("label.largeLabel").text = "Attribute Name"
+                            clientField.find(".largeLabel").html("Attribute Name");
                             clientField.show();
-                            insertSpan();
                             field.find("select").val("In an Attribute");
+                            break;
+                        default:
+                            field.find("input").val("microsoft");
+                            Teams._renderObjectLocationDropdown();
                             break;
                     }
                 },
                 _onDropdown: function (field, clientField) {
+                    var field = $("label").filter(function () {
+                        return $(this).text() == "@@AADObjectGUIDLocation";
+                    }).parent()
+
                     switch (field.find("select").val()) {
                         case "In Marval":
-                            clientField.find("input").val("entra");
+                            field.find("input").val("entra");
                             break;
                         case "From Microsoft":
-                            clientField.find("input").val("microsoft");
+                            field.find("input").val("microsoft");
                             break;
                         case "In an Attribute":
-                            clientField.find("input").val("attribute");
+                            field.find("input").val("attribute");
                             break;
                     }
-                    _renderObjectLocationDropdown();
+
+                    Teams._renderObjectLocationDropdown();
                 },
                 _getPluginPath: function () {
                     return this.attributes["data-pluginpath"].value;
@@ -334,6 +338,15 @@
                     $("*").remove(".chatbot-container")
                     $("*").remove("#TeamsError");
                     $("#TeamsPopup").append(`<div id='TeamsError'><br><img src="` + Teams._getPluginPath() + `img/spinner.gif" width="32px" height="32px"/></div>`)
+
+                    switch (await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=AADObjectGUIDLocation"))) {
+                        case "entra":
+                            break;
+                        case "microsoft":
+                            break;
+                        case "attribute":
+                            break;
+                    }
 
                     var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID"
                     console.log(url)
