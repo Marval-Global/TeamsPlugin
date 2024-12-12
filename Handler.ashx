@@ -35,6 +35,7 @@ public class Handler : PluginHandler
     private string ClientID { get { return this.GlobalSettings["@@ClientID"]; } }
     private string TenantID { get { return this.GlobalSettings["@@TenantID"]; } }
     private string CustomerName { get { return this.GlobalSettings["@@CustomerName"]; } }
+    private string AADObjectGUIDLocation { get { return this.GlobalSettings["@@AADObjectGUIDLocation"]; } }
 
 
     private int MsmRequestNo { get; set; }
@@ -132,8 +133,10 @@ public class Handler : PluginHandler
 
                     context.Response.Write(json);
                 }
-                else
+                else if (getParamVal == "AADObjectGUIDLocation")
                 {
+                    context.Response.Write(AADObjectGUIDLocation);
+                } else {
                     context.Response.Write("No valid parameter requested");
                 }
                 break;

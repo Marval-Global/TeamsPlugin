@@ -189,6 +189,17 @@
    `);
 
                         window.top.document.getElementById("installPlugin").onclick = createCustomer;
+                        Teams._renderObjectLocationDropdown();
+                        var field = $("label").filter(function () {
+                            return $(this).text() == "@@AADObjectGUIDLocation";
+                        }).parent()
+
+                        var clientField = $("label").filter(function () {
+                            return $(this).text() == "@@ClientID"
+                        }).parent()
+
+                        window.top.document.getElementById("objectLocationDropdown").addEventListener("change", _onDropdown(field, clientField));
+
                     } else if (currentUrl.includes("Request.aspx")) {
                         this._requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
                         if (this._requestNumber) {
@@ -235,7 +246,64 @@
                         //this._imageElement.style.display = "none";
                     }
                 }, // End _setTeamsLink
+                _renderObjectLocationDropdown() {
+                    var field = $("label").filter(function () {
+                        return $(this).text() == "@@AADObjectGUIDLocation";
+                    }).parent()
 
+                    var clientField = $("label").filter(function () {
+                        return $(this).text() == "@@ClientID"
+                    }).parent()
+
+                    function insertSpan() {
+                        field.remove("select");
+                        field.prepend(`
+                        <select id="objectLocationDropdown">
+                            <option value="In Marval"></option>
+                            <option value="From Microsoft"></option>
+                            <option value="In an Attribute"></option>
+                        </select>`)
+                    }
+
+                    field.find("input").hide();
+
+                    var aadObjectId = field.find("input").val();
+
+                    switch (aadObjectId) {
+                        case "entra":
+                            clientField.hide();
+                            insertSpan();
+                            field.find("select").val("In Marval");
+
+                            break;
+                        case "microsoft":
+                            clientField.find("label.largeLabel").text = "Application (Client) ID"
+                            clientField.show();
+                            insertSpan();
+                            field.find("select").val("From Microsoft");
+                            break;
+                        case "attribute":
+                            clientField.find("label.largeLabel").text = "Attribute Name"
+                            clientField.show();
+                            insertSpan();
+                            field.find("select").val("In an Attribute");
+                            break;
+                    }
+                },
+                _onDropdown: function (field, clientField) {
+                    switch (field.find("select").val()) {
+                        case "In Marval":
+                            clientField.find("input").val("entra");
+                            break;
+                        case "From Microsoft":
+                            clientField.find("input").val("microsoft");
+                            break;
+                        case "In an Attribute":
+                            clientField.find("input").val("attribute");
+                            break;
+                    }
+                    _renderObjectLocationDropdown();
+                },
                 _getPluginPath: function () {
                     return this.attributes["data-pluginpath"].value;
                 },
@@ -360,7 +428,8 @@
                     $("#TeamsError").remove();
                     $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: green;'>Chatbot Connected</p></div>")
                     setTimeout(function () {
-                        Teams._pluginWindow.hide();
+                        $("#ct100_overlay_id4").fadeOut(300, function () { Teams._pluginWindow.hide() });
+                        $("*").find('.initiate').prop('disabled', false);
                     }, 1000)
                 },
                 _setUpQuickMenu: function () {
@@ -386,6 +455,7 @@
                 },
                 _onBtnClick: function () {
                     event.preventDefault();
+                    $("*").find('.initiate').prop('disabled', true);
                     Teams._startChat();
                 },
                 _createWindowElements: function () {
@@ -463,7 +533,7 @@
                 },
                 _disconnectChat: function () {
                     event.preventDefault();
-                    Teams._pluginWindow.hide()
+                    $("#ct100_overlay_id4").fadeOut(300, function () { Teams._pluginWindow.hide() });
                     $("*").find(".chatbot-container").fadeOut(300, function () { $("*").remove(".chatbot-container"); })
                     $("#TeamsPopup").remove()
                 },
@@ -489,6 +559,9 @@
                     if (!this._pluginWindow.isVisible()) {
                         this._pluginWindow.centerToViewport();
                     }
+                    this._pluginWindow.show();
+                    this._pluginWindow.hide();
+                    $("#ct100_overlay_id4").show();
                     this._pluginWindow.show();
                 }
             });

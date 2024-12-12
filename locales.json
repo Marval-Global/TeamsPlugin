@@ -9,7 +9,8 @@
 				"SecretKey": "Secret Key",
 				"PluginDisplayname": "Teams",
 				"ClientID": "Application (Client) ID",
-				"TenantID": "Azure Tenant ID"
+				"TenantID": "Azure Tenant ID",
+				"AADObjectGUIDLocation": "aadObject GUID Location"
 			}
 		}]	
 }
