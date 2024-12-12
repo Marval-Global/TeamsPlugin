@@ -264,72 +264,104 @@
                 _startChat: async function (sender, e) {
 
                     $("*").remove(".chatbot-container")
+                    $("*").remove("#TeamsError");
+                    $("#TeamsPopup").append(`<div id='TeamsError'><br><img src="` + Teams._getPluginPath() + `img/spinner.gif" width="32px" height="32px"/></div>`)
 
-                    var id = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID")).text()
-                    var tenantID = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID")).text()
+                    var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID"
+                    console.log(url)
 
-                    const msalInstance = await msal.createStandardPublicClientApplication({
-                        auth: {
-                            clientId: id,
-                            authority: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
-                        },
-                    });
+                    var id = await (await fetch(url)).text()
 
-                    var loginRequest = {
-                        scopes: ["https://graph.microsoft.com/.default"],
-                        redirectStartPage: "https://dev.marvalaustralia.com.au/MSM/"
-                    };
+                    console.log("id is: ", id);
 
-                    try {
-                        var response = await msalInstance.loginPopup(loginRequest);
+                    if (id != "entra") {
+
+                        const msalInstance = await msal.createStandardPublicClientApplication({
+                            auth: {
+                                clientId: id,
+                                authority: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+                            },
+                        });
+
+                        var loginRequest = {
+                            scopes: ["https://graph.microsoft.com/.default"],
+                            redirectStartPage: "https://dev.marvalaustralia.com.au/MSM/"
+                        };
 
                         try {
-                            const authResp = await (await fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + Teams._contactEmail + "'", {
+                            var response = await msalInstance.loginPopup(loginRequest);
 
-                                method: "GET",
-                                headers: new Headers({
-                                    "Authorization": "Bearer " + response.accessToken,
+                            try {
+                                const authResp = fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + Teams._contactEmail + "'", {
+
+                                    method: "GET",
+                                    headers: new Headers({
+                                        "Authorization": "Bearer " + response.accessToken,
+                                    })
                                 })
-                            })).json()
 
-                            $("body").append(`
-                            <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
-                                <iframe id="chatbot-iframe"
-                                        src=""
-                                        title="Marval Chatbot"
-                                        allow="camera; microphone" style="position: absolute; z-index: 1000; border: none; height: 100%; width: 100%"></iframe>
-                            </div>
-                            `);
 
-                            // Get contact name as the firstname in the contact field (split from "lastname, firstname")
-                            var contactName = $("#ctl00_cph_contact_name").val().split(", ").pop()
+                                authResp.then(res => {
+                                    res.json().then(result => {
+                                        if (result.value.length < 1) {
+                                            throw Error("Search for contact returned no results.")
+                                        }
 
-                            $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + authResp.value[0].id + "&tenantId=" + tenantID + "&contactName=" + contactName);
+                                        Teams._injectChatbot(result.value[0].id);
+                                    })
+                                })
 
-                            $("*").find(".chatbot-container").hide().fadeIn(300, function () {})
+                            } catch (err) {
+                                $("#TeamsError").remove();
+                                $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find a Teams contact for " + Teams._contactEmail + "</p></div>")
+                                console.error("Teams search error:\n", err)
+                                $("*").remove(".chatbot-container")
+                            }
 
-                            let iframe = $("#chatbot-iframe")
-
-                            iframe.contents().find("#chatBubble > p").text("Chat with the contact for this request here!");
-                            $("#TeamsError").remove();
-                            $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: green;'>Success!</p></div>")
-                            setTimeout(function () {
-                                Teams._pluginWindow.hide();
-                            }, 1000)
                         } catch (err) {
                             $("#TeamsError").remove();
-                            $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find a Teams contact for " + Teams._contactEmail + "</p></div>")
-                            console.error("Teams search error:\n", err)
+                            $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to authenticate with Microsoft</p></div>")
                             $("*").remove(".chatbot-container")
+                            console.error("MS Auth error:\n", err)
                         }
+                    } else {
+                        try {
+                            let dbVal = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=databaseValue&CIId=" + $("#ctl00_cph_contact_value").attr("value"))).text()
 
-                    } catch (err) {
-                        $("#TeamsError").remove();
-                        $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to authenticate with Microsoft</p></div>")
-                        $("*").remove(".chatbot-container")
-                        console.error("MS Auth error:\n", err)
+                            Teams._injectChatbot(dbVal);
+
+                        } catch (err) {
+                            log.error("Error retrieving aadObjectId from database:\n", err);
+                        }
                     }
 
+                },
+                _injectChatbot: async function (aadObjectId) {
+                    var url = Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID";
+                    var tenantID = await (await fetch(url)).text();
+                    $("body").append(`
+                    <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
+                        <iframe id="chatbot-iframe"
+                                src=""
+                                title="Marval Chatbot"
+                                allow="camera; microphone" style="position: absolute; z-index: 1000; border: none; height: 100%; width: 100%"></iframe>
+                    </div>
+                    `);
+
+                    // Get contact name as the firstname in the contact field (split from "lastname, firstname")
+                    var contactName = $("#ctl00_cph_contact_name").val().split(", ").pop()
+
+                    $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName);
+
+                    $("*").find(".chatbot-container").hide().fadeIn(300, function () { })
+
+                    let iframe = $("#chatbot-iframe")
+
+                    $("#TeamsError").remove();
+                    $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: green;'>Success!</p></div>")
+                    setTimeout(function () {
+                        Teams._pluginWindow.hide();
+                    }, 1000)
                 },
                 _setUpQuickMenu: function () {
                     var styleElement = window.top.document.createElement("style");
@@ -431,7 +463,7 @@
                 },
                 _disconnectChat: function () {
                     event.preventDefault();
-                    Teams._pluginWindow.hide() 
+                    Teams._pluginWindow.hide()
                     $("*").find(".chatbot-container").fadeOut(300, function () { $("*").remove(".chatbot-container"); })
                     $("#TeamsPopup").remove()
                 },
