@@ -339,81 +339,101 @@
                     $("*").remove("#TeamsError");
                     $("#TeamsPopup").append(`<div id='TeamsError'><br><img src="` + Teams._getPluginPath() + `img/spinner.gif" width="32px" height="32px"/></div>`)
 
-                    switch (await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=AADObjectGUIDLocation"))) {
+                    switch (await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=AADObjectGUIDLocation")).text()) {
                         case "entra":
+                            try {
+                                let dbVal = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=databaseValue&CIId=" + $("#ctl00_cph_contact_value").attr("value"))).text()
+
+                                Teams._injectChatbot(dbVal);
+
+                            } catch (err) {
+                                console.error("Error retrieving aadObjectId from database:\n", err);
+                            }
                             break;
                         case "microsoft":
-                            break;
-                        case "attribute":
-                            break;
-                    }
 
-                    var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID"
-                    console.log(url)
+                            var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID"
 
-                    var id = await (await fetch(url)).text()
+                            var id = await (await fetch(url)).text()
 
-                    console.log("id is: ", id);
+                            const msalInstance = await msal.createStandardPublicClientApplication({
+                                auth: {
+                                    clientId: id,
+                                    authority: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+                                },
+                            });
 
-                    if (id != "entra") {
-
-                        const msalInstance = await msal.createStandardPublicClientApplication({
-                            auth: {
-                                clientId: id,
-                                authority: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
-                            },
-                        });
-
-                        var loginRequest = {
-                            scopes: ["https://graph.microsoft.com/.default"],
-                            redirectStartPage: "https://dev.marvalaustralia.com.au/MSM/"
-                        };
-
-                        try {
-                            var response = await msalInstance.loginPopup(loginRequest);
+                            var loginRequest = {
+                                scopes: ["https://graph.microsoft.com/.default"],
+                                redirectStartPage: "https://dev.marvalaustralia.com.au/MSM/"
+                            };
 
                             try {
-                                const authResp = fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + Teams._contactEmail + "'", {
+                                var response = await msalInstance.loginPopup(loginRequest);
 
-                                    method: "GET",
-                                    headers: new Headers({
-                                        "Authorization": "Bearer " + response.accessToken,
+                                try {
+                                    const authResp = fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + Teams._contactEmail + "'", {
+
+                                        method: "GET",
+                                        headers: new Headers({
+                                            "Authorization": "Bearer " + response.accessToken,
+                                        })
                                     })
-                                })
 
 
-                                authResp.then(res => {
-                                    res.json().then(result => {
-                                        if (result.value.length < 1) {
-                                            throw Error("Search for contact returned no results.")
-                                        }
+                                    authResp.then(res => {
+                                        res.json().then(result => {
+                                            if (result.value.length < 1) {
+                                                throw Error("Search for contact returned no results.")
+                                            }
 
-                                        Teams._injectChatbot(result.value[0].id);
+                                            Teams._injectChatbot(result.value[0].id);
+                                        })
                                     })
-                                })
+
+                                } catch (err) {
+                                    $("#TeamsError").remove();
+                                    $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find a Teams contact for " + Teams._contactEmail + "</p></div>")
+                                    console.error("Teams search error:\n", err)
+                                    $("*").remove(".chatbot-container")
+                                }
 
                             } catch (err) {
                                 $("#TeamsError").remove();
-                                $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find a Teams contact for " + Teams._contactEmail + "</p></div>")
-                                console.error("Teams search error:\n", err)
+                                $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to authenticate with Microsoft</p></div>")
                                 $("*").remove(".chatbot-container")
+                                console.error("MS Auth error:\n", err)
+                            }
+                            break;
+                        case "attribute":
+                            try {
+                                var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID"
+                                var attributeName = await (await fetch(url)).text()
+
+                                var CIId = $("#ctl00_cph_contact_value").attr("value")
+
+                                var attrPage = $(await (await fetch("/MSM/RFP/Forms/SummaryPages/CustomerSummary.aspx?id=" + CIId)).text())
+
+                                var attrLabel = attrPage.find("label").filter(function () {
+                                    return this.textContent == attributeName
+                                })
+
+                                if (attrLabel.length < 1) {
+                                    throw Error("Could not find attribute '" + attributeName + "' in contact's summary page. Is it configured?")
+                                }
+
+                                var aadObjectId = attrLabel.parent().find("span").text();
+                                Teams._injectChatbot(aadObjectId);
+
+                            } catch (err) {
+                                $("#TeamsError").remove();
+                                var contactName = $("#ctl00_cph_contact_name").val().split(", ").pop()
+                                $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find Teams ID attribute for " + $("#ctl00_cph_contact_name").val().split(", ").pop() + "</p></div>")
+                                $("*").remove(".chatbot-container")
+                                console.error("Attribute error:\n", err)
                             }
 
-                        } catch (err) {
-                            $("#TeamsError").remove();
-                            $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to authenticate with Microsoft</p></div>")
-                            $("*").remove(".chatbot-container")
-                            console.error("MS Auth error:\n", err)
-                        }
-                    } else {
-                        try {
-                            let dbVal = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=databaseValue&CIId=" + $("#ctl00_cph_contact_value").attr("value"))).text()
-
-                            Teams._injectChatbot(dbVal);
-
-                        } catch (err) {
-                            log.error("Error retrieving aadObjectId from database:\n", err);
-                        }
+                            break;
                     }
 
                 },
