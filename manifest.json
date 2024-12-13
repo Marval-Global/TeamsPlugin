@@ -3,7 +3,7 @@
     "Organisation": "Marval Software",
     "DisplayName": "@@PluginDisplayname",
     "Icon": "img/microsoft-teams.png",
-    "Version": "1.2.3",
+    "Version": "1.2.4",
     "SupportedVersions": [
         "15.7.1",
         "15.7.2",
@@ -20,8 +20,8 @@
         "@@CustomerGUID",
         "@@CustomerName",
         "@@SecretKey",
-        "@@ClientID",
         "@@TenantID",
-        "@@AADObjectGUIDLocation"
+        "@@AADObjectGUIDLocation",
+        "@@ClientID"
     ]
 }
