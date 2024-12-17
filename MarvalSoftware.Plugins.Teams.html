@@ -372,24 +372,20 @@
                                 var response = await msalInstance.loginPopup(loginRequest);
 
                                 try {
-                                    const authResp = fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + Teams._contactEmail + "'", {
+                                    const result = await (await fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + Teams._contactEmail + "'", {
 
                                         method: "GET",
                                         headers: new Headers({
                                             "Authorization": "Bearer " + response.accessToken,
                                         })
-                                    })
+                                    })).json()
 
-
-                                    authResp.then(res => {
-                                        res.json().then(result => {
-                                            if (result.value.length < 1) {
-                                                throw Error("Search for contact returned no results.")
-                                            }
+                                    if (result.value.length < 1) {
+                                    throw Error("Search for contact returned no results.")
+                                    } else {
 
                                             Teams._injectChatbot(result.value[0].id);
-                                        })
-                                    })
+                                    }
 
                                 } catch (err) {
                                     $("#TeamsError").remove();
@@ -452,7 +448,12 @@
                     // Get contact name as the firstname in the contact field (split from "lastname, firstname")
                     var contactName = $("#ctl00_cph_contact_name").val().split(", ").pop()
 
-                    $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName);
+                    var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ChatbotHostOverride";
+
+                    // Create and style the text content
+                    let fetchedChatbotHostOverride = await (await fetch(url)).text();
+
+                    $("#chatbot-iframe").attr("src", "https://" + fetchedChatbotHostOverride + "/chatbot-client?aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName + "&agentName=" + $(".myServiceDesk").children("a").text());
 
                     $("*").find(".chatbot-container").hide().fadeIn(300, function () { })
 
@@ -566,7 +567,7 @@
                 },
                 _disconnectChat: function () {
                     event.preventDefault();
-                    $("#ct100_overlay_id4").fadeOut(300, function () { Teams._pluginWindow.hide() });
+                    $("marvalsoftware-plugins-teams").parent().parent().fadeOut(300, function () { Teams._pluginWindow.hide() });
                     $("*").find(".chatbot-container").fadeOut(300, function () { $("*").remove(".chatbot-container"); })
                     $("#TeamsPopup").remove()
                 },

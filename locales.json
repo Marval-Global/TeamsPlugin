@@ -10,7 +10,8 @@
 				"PluginDisplayname": "Teams",
 				"ClientID": "Application (Client) ID",
 				"TenantID": "Azure Tenant ID",
-				"AADObjectGUIDLocation": "aadObject GUID Location"
+				"AADObjectGUIDLocation": "aadObject GUID Location",
+				"ChatbotHostOverride":  "Chatbot Host Override"
 			}
 		}]	
 }

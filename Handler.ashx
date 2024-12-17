@@ -37,6 +37,14 @@ public class Handler : PluginHandler
     private string CustomerName { get { return this.GlobalSettings["@@CustomerName"]; } }
     private string AADObjectGUIDLocation { get { return this.GlobalSettings["@@AADObjectGUIDLocation"]; } }
 
+    private string ChatbotHostOverride
+    {
+        get
+        {
+            // if (this.GlobalSettings["@@ChatbotHostOverride"])
+            return this.GlobalSettings["@@ChatbotHostOverride"] == "" ? "chatbot.marval.cloud" : this.GlobalSettings["@@ChatbotHostOverride"];
+        }
+    }
 
     private int MsmRequestNo { get; set; }
 
@@ -114,10 +122,16 @@ public class Handler : PluginHandler
                 var getParamVal = context.Request.Params["endpoint"] ?? string.Empty;
                 if (getParamVal == "createTeams")
                 {
-                    var response = PostRequest("https://chatbot.marval.cloud/api/server/", "");
+                    var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/", "");
+
                     Log.Information("Have data2 " + response);
                     context.Response.Write("Hi");
 
+                }
+                else if (getParamVal == "ChatbotHostOverride")
+                {
+                    Log.Information("Have postrequest chat thing as  " + this.ChatbotHostOverride);
+                    context.Response.Write(this.ChatbotHostOverride);
                 }
                 else if (getParamVal == "ClientID")
                 {
@@ -136,7 +150,9 @@ public class Handler : PluginHandler
                 else if (getParamVal == "AADObjectGUIDLocation")
                 {
                     context.Response.Write(AADObjectGUIDLocation);
-                } else {
+                }
+                else
+                {
                     context.Response.Write("No valid parameter requested");
                 }
                 break;
@@ -156,7 +172,7 @@ public class Handler : PluginHandler
 
 
                         // Make the POST request
-                        var response = PostRequest("https://chatbot.marval.cloud/api/server/createCustomer", "{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
+                        var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/createCustomer", "{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
                         Log.Information("Have data2 back as " + response);
                         // context.Response.Write(context.Response.StatusCode);
                         // Write the response back
