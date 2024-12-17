@@ -452,7 +452,7 @@
                     // Get contact name as the firstname in the contact field (split from "lastname, firstname")
                     var contactName = $("#ctl00_cph_contact_name").val().split(", ").pop()
 
-                    $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName);
+                    $("#chatbot-iframe").attr("src", "https://chatbot.marval.cloud/chatbot-client?aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName + "&agentName=" + $(".myServiceDesk).children("a").text());
 
                     $("*").find(".chatbot-container").hide().fadeIn(300, function () { })
 
