@@ -11,7 +11,8 @@
 				"ClientID": "Application (Client) ID",
 				"TenantID": "Azure Tenant ID",
 				"AADObjectGUIDLocation": "aadObject GUID Location",
-				"ChatbotHostOverride":  "Chatbot Host Override"
+				"ChatbotHostOverride":  "Chatbot Host Override",
+				"MarvalAPIKey": "Marval API Key"
 			}
 		}]	
 }
