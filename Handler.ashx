@@ -41,7 +41,6 @@ public class Handler : PluginHandler
     {
         get
         {
-            // if (this.GlobalSettings["@@ChatbotHostOverride"])
             return this.GlobalSettings["@@ChatbotHostOverride"] == "" ? "chatbot.marval.cloud" : this.GlobalSettings["@@ChatbotHostOverride"];
         }
     }
@@ -50,7 +49,6 @@ public class Handler : PluginHandler
 
     private int lastLocation { get; set; }
 
-    // private string Password = this.GlobalSettings["RequestAttributeTypeId"];   
     public override bool IsReusable { get { return false; } }
 
 
@@ -66,7 +64,6 @@ public class Handler : PluginHandler
             // Write data to request body
             using (StreamWriter writer = new StreamWriter(request.GetRequestStream()))
             {
-                Log.Information("Have data " + data);
                 writer.Write(data);
             }
 
@@ -90,7 +87,6 @@ public class Handler : PluginHandler
                     {
                         string errorText = reader.ReadToEnd();
                         // Return or log the error text
-                        Log.Information("Response error is ", errorText);
                         return errorText;
                     }
                 }
@@ -124,13 +120,11 @@ public class Handler : PluginHandler
                 {
                     var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/", "");
 
-                    Log.Information("Have data2 " + response);
                     context.Response.Write("Hi");
 
                 }
                 else if (getParamVal == "ChatbotHostOverride")
                 {
-                    Log.Information("Have postrequest chat thing as  " + this.ChatbotHostOverride);
                     context.Response.Write(this.ChatbotHostOverride);
                 }
                 else if (getParamVal == "ClientID")
@@ -161,9 +155,6 @@ public class Handler : PluginHandler
                 var customerName = context.Request.Form["customerName"];
                 var tenantId = this.TenantID;
                 var action = context.Request.Form["action"];
-                Log.Information("Have hostsource as " + hostSource);
-                Log.Information("Have customerName as " + customerName);
-                Log.Information("Have action as " + action);
                 if (action == "createTeams")
                 {
                     try
@@ -173,16 +164,11 @@ public class Handler : PluginHandler
 
                         // Make the POST request
                         var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/createCustomer", "{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
-                        Log.Information("Have data2 back as " + response);
-                        // context.Response.Write(context.Response.StatusCode);
                         // Write the response back
                         context.Response.Write(response);
                     }
                     catch (Exception ex)
                     {
-                        // Log the error
-                        //  Log.Error("Error occurred while creating teams: " + ex.Message, ex);
-                        Log.Information("Error in createCustomer method" + ex);
                         // Return an error response
                         context.Response.StatusCode = 500; // Internal Server Error
                         context.Response.ContentType = "application/json";
@@ -222,7 +208,6 @@ public class Handler : PluginHandler
         }
         else
         {
-            Log.Information("Could not find connection string on the local machine");
         }
         return connectionString;
     }
