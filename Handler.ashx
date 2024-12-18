@@ -36,7 +36,7 @@ public class Handler : PluginHandler
     private string TenantID { get { return this.GlobalSettings["@@TenantID"]; } }
     private string CustomerName { get { return this.GlobalSettings["@@CustomerName"]; } }
     private string AADObjectGUIDLocation { get { return this.GlobalSettings["@@AADObjectGUIDLocation"]; } }
-
+    private string MarvalAPIKey { get { return this.GlobalSettings["@@MarvalAPIKey"]; } }
     private string ChatbotHostOverride
     {
         get
@@ -163,7 +163,7 @@ public class Handler : PluginHandler
 
 
                         // Make the POST request
-                        var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/createCustomer", "{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
+                        var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/createCustomer", "{ \"MarvalAPIKey\": \"" + this.MarvalAPIKey + "\", \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
                         // Write the response back
                         context.Response.Write(response);
                     }
