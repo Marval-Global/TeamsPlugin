@@ -1,252 +1,596 @@
-<%@ WebHandler Language = "C#" Class="Handler" %>
-
-using System;
-using System.IO;
-using System.Net;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.Serialization;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using Serilog;
-using System.Web.Script.Serialization;
-using System.Web;
-using MarvalSoftware.UI.WebUI.ServiceDesk.RFP.Plugins;
-using System.Linq;
-using System.Xml.Linq;
-using System.Data;
-using System.Data.SqlClient;
-using Microsoft.Win32;
-
-public class Handler : PluginHandler
-{
-
-    private string APIKey { get; set; }
-
-    private string Password { get; set; }
-    private string Username { get; set; }
-    private string Host { get; set; }
-
-    private string DBName { get; set; }
-    private string MarvalHost { get; set; }
-    private string AssignmentGroups { get; set; }
-    private string CustomerGUID { get { return this.GlobalSettings["@@CustomerGUID"]; } }
-    private string ClientID { get { return this.GlobalSettings["@@ClientID"]; } }
-    private string TenantID { get { return this.GlobalSettings["@@TenantID"]; } }
-    private string CustomerName { get { return this.GlobalSettings["@@CustomerName"]; } }
-    private string AADObjectGUIDLocation { get { return this.GlobalSettings["@@AADObjectGUIDLocation"]; } }
-    private string MarvalAPIKey { get { return this.GlobalSettings["@@MarvalAPIKey"]; } }
-    private string ChatbotHostOverride
-    {
-        get
-        {
-            return this.GlobalSettings["@@ChatbotHostOverride"] == "" ? "chatbot.marval.cloud" : this.GlobalSettings["@@ChatbotHostOverride"];
+<script type="text/javascript" src="Template.js"></script>
+<template>
+    <style>
+        .pluginWrapper {
+            display: none;
         }
-    }
 
-    private int MsmRequestNo { get; set; }
+        .contactSearcher .telephone {
+            width: 86px;
+        }
 
-    private int lastLocation { get; set; }
+        .MarvalSoftware-Teams {
+            display: none;
+        }
 
-    public override bool IsReusable { get { return false; } }
+        .window .MarvalSoftware-Teams {
+            display: block;
+        }
 
+        .MarvalSoftware-Teams {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border: none;
+        }
 
-    private string PostRequest(string url, string data)
-    {
-        try
-        {
-            // Create a web request
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = "POST";
-            request.ContentType = "application/json";
+        .TeamsWindow {
+            border: 0px;
+        }
 
-            // Write data to request body
-            using (StreamWriter writer = new StreamWriter(request.GetRequestStream()))
-            {
-                writer.Write(data);
+        .MarvalSoftware-Teams a {
+            color: #3B73AF;
+        }
+
+        .MarvalSoftware-Teams > .header {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            line-height: 0px;
+        }
+
+            .MarvalSoftware-Teams > .header > a {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                right: 0;
+                text-decoration: none;
+                border: none;
             }
 
-            // Get response
-            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-            {
-                using (StreamReader reader = new StreamReader(response.GetResponseStream()))
-                {
-                    return reader.ReadToEnd();
-                }
-            }
+        .MarvalSoftware-Teams > .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 550px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
         }
-        catch (WebException webEx)
-        {
-            // If we have a response, we can read the error message from the response body
-            if (webEx.Response != null)
+
+        .chatbot-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</template>
+<script type="text/javascript" src="msal-browser.min.js"></script>
+<div class="MarvalSoftware-Teams">
+</div>
+<script>
+    (function () {
+
+        var Teams = null
+        var MarvalSoftware = window.top.MarvalSoftware;
+        var $ = window.top.$;
+        MarvalSoftware.Plugins.define("MarvalSoftware-Plugins-Teams",
             {
-                using (var errorResponse = (HttpWebResponse)webEx.Response)
-                {
-                    using (var reader = new StreamReader(errorResponse.GetResponseStream()))
-                    {
-                        string errorText = reader.ReadToEnd();
-                        // Return or log the error text
-                        return errorText;
+                _pluginPath: null,
+                _element: null,
+                _imageElement: null,
+                _contactEmail: "...",
+                _pluginWindow: null,
+                _popupBody: null,
+                init: function () {
+                    Teams = this
+                    console.log();
+                    var currentUrl = window.top.location.href;
+                    var PWelement = $('#ctl00_ctl00_cph_entityHeaderText').text();
+                    if (currentUrl.includes("Plugin.aspx") && PWelement == 'MarvalSoftware.Plugins.Teams') {
+
+
+                        var that = this;
+                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
+                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', true);
+                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl07_value').parent().hide();
+                        
+                        
+                        function createCustomer() {
+                            var customernamecheck = $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value').val();
+
+                            //$('#installPlugin').prop('disabled', true);
+                            $('#errorText').text("");
+                            if (customernamecheck === "" || customernamecheck === null) {
+
+
+                                $('#errorText').text("Please type a customer name under Global Settings below before activating the integration.");
+                            } else {
+                                //  $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', false);
+                                //   $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', false);
+                                $('#errorText').text("");
+                                var postData = {
+                                    "hostSource": window.top.location.href,
+                                    "customerName": customernamecheck,
+                                    "action": "createTeams"
+                                };
+                                $('#installPlugin').after("<br>Creating record, please wait...");
+                                $.ajax({
+                                    type: "POST",
+                                    url: that._getPluginPath() + "Handler.ashx",
+                                    contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                                    dataType: "json", // Expect JSON response
+                                    data: postData,
+                                    success: function (result) {
+                                        if (result.error) {
+                                            $('#errorText').text(result.error);
+                                        }
+                                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val(result.guid);
+                                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').val(result.secretkey);
+                                        if (result.guid && result.secretkey) {
+                                            $('#successText').text("Your account was created successfully, please wait...");
+                                            $('#ctl00_ctl00_cph_apply_fakeApplyButton').click();
+                                        }
+                                        // if (Object.keys(result).length > 0) {
+                                        //     this._errorPopup(result);
+                                        // } else {
+                                        //     this._popup();
+                                        // }
+                                    },
+                                    error: function (err) {
+                                        $('#errorText').text(JSON.stringify(err));
+                                    }
+                                        .bind(this)
+                                });
+                            }
+                        }
+                        $('#ctl00_ctl00_cph_maintenance_pluginDetailsFieldSet').before(`
+                   <br> <div>
+   <fieldset>
+    <legend>Teams Integration</legend>
+
+    <!-- <div id="itemsContainer"></div> -->
+
+    <span id="teamsPluginActivated">You have not yet activated the Teams Integration<br><a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">Click here</a> if you require infromation on how to configure the Teams plugin.</span><br><br>
+    <button type="button" style="cursor:pointer" id="installPlugin">Activate Teams Integration</button><br>
+    <div style="cursor:pointer;display:none;" id="additionalInstructions">
+    <button type="button" style="cursor:pointer">Load Additional Instructions</button><br> <br>
+    <span>
+        Now that you have initiated the install, please follow the additional instructions in the chatbot documentation <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">here</a> . <br><br>
+        This code will need to be placed into <b>Maintenance</b> | <b>Service</b> | <b>Self Service Customisation</b> under the AI Chatbot tab under the Private Key, Public Key and Code Snippet sections, respectively.<br>
+
+        <a id="privatekeydownload" href="">Download Private Key</a><br>
+        <a id="privatekeydownload" href="">Download Public Key</a><br>
+        <a id="codesnippetdownload" href="">Download Self Service Code Snippet</a><br>
+    <!-- The Issuer for the chatbot, is https://chatbot.marval.cloud/<br><br> -->
+     <span class="formSpan">
+            <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button>
+            <div id="responseContainer">
+                <pre id="formattedResponse"></pre>
+            </div>
+        </span>
+
+    </div>
+
+    <!--<a href="https://azure.microsoft.com/en-us/pricing/details/bot-services/">Azure Bot Pricing</href> -->
+
+      <div style="color:red" id="errorText"></div>
+       <div style="color:green" id="successText"></div>
+    <div id="savebuttonConfirm" style="color:green;font-weight:bold; display: none"><br><span style="color:green">Install Initiated</span><br></div>
+    </fieldset>
+    <br><br>
+    <fieldset style="display: none;cursor:pointer;width: 800px" id="testPlugin">
+        <legend>Test Teams Integration</legend><br>
+
+    </fieldset>
+    </div>
+   `);
+
+                        window.top.document.getElementById("installPlugin").onclick = createCustomer;
+                        var field = $("label").filter(function () {
+                            return $(this).text() == "@@AADObjectGUIDLocation";
+                        }).parent()
+
+                        var clientField = $("label").filter(function () {
+                            return $(this).text() == "@@ClientID"
+                        }).parent()
+
+                        field.append(`
+                        <select id="objectLocationDropdown" value="In Marval">
+                            <option value="In Marval">In Marval</option>
+                            <option value="From Microsoft">From Microsoft</option>
+                            <option value="In an Attribute">In an Attribute</option>
+                        </select>`)
+
+                        Teams._renderObjectLocationDropdown();
+
+                        window.top.document.getElementById("objectLocationDropdown").onchange = Teams._onDropdown;
+
+                    } else if (currentUrl.includes("Request.aspx")) {
+                        this._requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
+                        if (this._requestNumber) {
+                            this._setUpQuickMenu();
+                        }
                     }
-                }
-            }
 
-            // If we have no response, return the exception message
-            return webEx.Message;
-        }
-        catch (Exception ex)
-        {
-            // Handle other exceptions
-            return ex.ToString();
-        }
-    }
+                    if ($('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val()) {
+                        $('#installPlugin').hide();
+                        $('#additionalInstructions').show();
+                        $('#teamsPluginActivated').hide();
+                        // $('#testPlugin').show();
+                    } else {
 
-    public override void HandleRequest(HttpContext context)
-    {
-        var param = context.Request.HttpMethod;
-        var browserObject = context.Request.Browser;
-
-        MsmRequestNo = !string.IsNullOrWhiteSpace(context.Request.Params["requestNumber"]) ? int.Parse(context.Request.Params["requestNumber"]) : 0;
-        lastLocation = !string.IsNullOrWhiteSpace(context.Request.Params["lastLocation"]) ? int.Parse(context.Request.Params["lastLocation"]) : 0;
-
-        this.MarvalHost = context.Request.Params["host"] ?? string.Empty;
-
-        switch (param)
-        {
-            case "GET":
-                var getParamVal = context.Request.Params["endpoint"] ?? string.Empty;
-                if (getParamVal == "createTeams")
-                {
-                    var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/", "");
-
-                    context.Response.Write("Hi");
-
-                }
-                else if (getParamVal == "ChatbotHostOverride")
-                {
-                    context.Response.Write(this.ChatbotHostOverride);
-                }
-                else if (getParamVal == "ClientID")
-                {
-                    context.Response.Write(ClientID);
-                }
-                else if (getParamVal == "TenantID")
-                {
-                    context.Response.Write(TenantID);
-                }
-                else if (getParamVal == "databaseValue")
-                {
-                    string json = this.GetCustomersJSON(context.Request.Params["CIId"]);
-
-                    context.Response.Write(json);
-                }
-                else if (getParamVal == "AADObjectGUIDLocation")
-                {
-                    context.Response.Write(AADObjectGUIDLocation);
-                }
-                else
-                {
-                    context.Response.Write("No valid parameter requested");
-                }
-                break;
-            case "POST":
-                var hostSource = context.Request.Form["hostSource"];
-                var customerName = context.Request.Form["customerName"];
-                var tenantId = this.TenantID;
-                var action = context.Request.Form["action"];
-                if (action == "createTeams")
-                {
-                    try
-                    {
-                        // Construct the request payload
-
-
-                        // Make the POST request
-                        var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/createCustomer", "{ \"MarvalAPIKey\": \"" + this.MarvalAPIKey + "\", \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
-                        // Write the response back
-                        context.Response.Write(response);
                     }
-                    catch (Exception ex)
-                    {
-                        // Return an error response
-                        context.Response.StatusCode = 500; // Internal Server Error
-                        context.Response.ContentType = "application/json";
-                        context.Response.Write("{\"error\":\"An error occurred while processing your request.\"}");
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var page = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage();
+
+                        // attach the display element
+                        var template = document.querySelector('template').content;
+                        this._element = window.top.document.importNode(template, true);
+                        this._imageElement = this._element.querySelector('#MarvalSoftware-Plugins-Teams');
+                        //   page._contactSearcher._extensionInput.parentElement.insertBefore(this._element, page._contactSearcher._extensionInput.nextSibling);
+                    }.bind(this));
+                }, // End init
+                _setTeamsLink: function () {
+                    String.prototype.format = function () {
+                        var args = arguments;
+                        return this.replace(/{([0-9]+)}/g, function (match, index) {
+                            return typeof args[index] == 'undefined' ? match : args[index];
+                        });
+                    };
+                    try {
+                        var contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
+                        // var contactName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._contactSearcher._nameInput.value.split(', ')[1].split(' ')[0];
+                        // var requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._requestTypeAcronym + "-" + MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
+                        //  var currentUserName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._mainMenu._menuBar._menuItems[2]._element.children[0].innerHTML.split(' ')[0];
+                        // var teamsLink = "https://teams.microsoft.com/l/chat/0/0?users={0}&message=Hi {1}, {2} from IT is here, do you have a moment to talk about {3}?".format(contactEmail, contactName, currentUserName, requestNumber);
+                        //  this._imageElement.src = this._getPluginPath() + "img/microsoft-teams.png";
+                        //   this._imageElement.setAttribute("onClick", "window.open('" + teamsLink + "', '_blank');");
+                        this._imageElement.style.display = "inline";
+                    } catch {
+                        // hide the button if any of the parameters can not be loaded
+                        //this._imageElement.style.display = "none";
                     }
+                }, // End _setTeamsLink
+                _renderObjectLocationDropdown() {
+                    var field = $("label").filter(function () {
+                        return $(this).text() == "@@AADObjectGUIDLocation";
+                    }).parent()
+
+                    var clientField = $("label").filter(function () {
+                        return $(this).text() == "@@ClientID"
+                    }).parent()
+
+                    field.find("input").hide();
+
+                    var aadObjectId = field.find("input").val();
+
+                    switch (aadObjectId) {
+                        case "entra":
+                            clientField.hide();
+                            field.find("select").val("In Marval");
+
+                            break;
+                        case "microsoft":
+                            clientField.find(".largeLabel").html("Application (Client) ID");
+                            clientField.show();
+                            field.find("select").val("From Microsoft");
+                            break;
+                        case "attribute":
+                            clientField.find(".largeLabel").html("Attribute Name");
+                            clientField.show();
+                            field.find("select").val("In an Attribute");
+                            break;
+                        default:
+                            field.find("input").val("microsoft");
+                            Teams._renderObjectLocationDropdown();
+                            break;
+                    }
+                },
+                _onDropdown: function (field, clientField) {
+                    var field = $("label").filter(function () {
+                        return $(this).text() == "@@AADObjectGUIDLocation";
+                    }).parent()
+
+                    switch (field.find("select").val()) {
+                        case "In Marval":
+                            field.find("input").val("entra");
+                            break;
+                        case "From Microsoft":
+                            field.find("input").val("microsoft");
+                            break;
+                        case "In an Attribute":
+                            field.find("input").val("attribute");
+                            break;
+                    }
+
+                    Teams._renderObjectLocationDropdown();
+                },
+                _getPluginPath: function () {
+                    return this.attributes["data-pluginpath"].value;
+                },
+                _getPluginId: function () {
+                    return this.attributes["data-pluginid"].value;
+                },
+                _getPluginCulture: function () {
+                    return this.attributes["data-pluginculture"].value;
+                },
+                _getString: function (key, formatObject) {
+                    return MarvalSoftware.Plugins.PluginResourceManager.getInstance().getString(this._getPluginId(), key, this._getPluginCulture(), formatObject);
+                },
+                _getUserEmail: async function () {
+                    const url = "/MSM/RFP/Forms/Profile.aspx";
+
+                    // Create and style the text content
+                    let fetchedDom = $(await (await fetch(url)).text());
+                    if (undefined == fetchedDom.find("#ctl00_cph_notifyMethod"))
+                        return "";
+                    else if (fetchedDom.find("#ctl00_cph_notifyMethod").text() != "Email") {
+                        return "";
+                    } else {
+                        return fetchedDom.find("#ctl00_cph_notifyAddress").text();
+                    }
+                },
+                _startChat: async function (sender, e) {
+
+                    $("*").remove(".chatbot-container")
+                    $("*").remove("#TeamsError");
+                    $("#TeamsPopup").append(`<div id='TeamsError'><br><img src="` + Teams._getPluginPath() + `img/spinner.gif" width="32px" height="32px"/></div>`)
+
+                    switch (await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=AADObjectGUIDLocation")).text()) {
+                        case "entra":
+                            try {
+                                let dbVal = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=databaseValue&CIId=" + $("#ctl00_cph_contact_value").attr("value"))).text()
+
+                                Teams._injectChatbot(dbVal);
+
+                            } catch (err) {
+                                console.error("Error retrieving aadObjectId from database:\n", err);
+                            }
+                            break;
+                        case "microsoft":
+
+                            var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID"
+
+                            var id = await (await fetch(url)).text()
+
+                            const msalInstance = await msal.createStandardPublicClientApplication({
+                                auth: {
+                                    clientId: id,
+                                    authority: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+                                },
+                            });
+
+                            var loginRequest = {
+                                scopes: ["https://graph.microsoft.com/.default"]
+                            };
+
+                            try {
+                                var response = await msalInstance.loginPopup(loginRequest);
+
+                                try {
+                                    const result = await (await fetch("https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '" + Teams._contactEmail + "'", {
+
+                                        method: "GET",
+                                        headers: new Headers({
+                                            "Authorization": "Bearer " + response.accessToken,
+                                        })
+                                    })).json()
+
+                                    if (result.value.length < 1) {
+                                    throw Error("Search for contact returned no results.")
+                                    } else {
+
+                                            Teams._injectChatbot(result.value[0].id);
+                                    }
+
+                                } catch (err) {
+                                    $("#TeamsError").remove();
+                                    $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find a Teams contact for " + Teams._contactEmail + "</p></div>")
+                                    console.error("Teams search error:\n", err)
+                                    $("*").remove(".chatbot-container")
+                                }
+
+                            } catch (err) {
+                                $("#TeamsError").remove();
+                                $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to authenticate with Microsoft</p></div>")
+                                $("*").remove(".chatbot-container")
+                                console.error("MS Auth error:\n", err)
+                            }
+                            break;
+                        case "attribute":
+                            try {
+                                var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ClientID"
+                                var attributeName = await (await fetch(url)).text()
+
+                                var CIId = $("#ctl00_cph_contact_value").attr("value")
+
+                                var attrPage = $(await (await fetch("/MSM/RFP/Forms/SummaryPages/CustomerSummary.aspx?id=" + CIId)).text())
+
+                                var attrLabel = attrPage.find("label").filter(function () {
+                                    return this.textContent == attributeName
+                                })
+
+                                if (attrLabel.length < 1) {
+                                    throw Error("Could not find attribute '" + attributeName + "' in contact's summary page. Is it configured?")
+                                }
+
+                                var aadObjectId = attrLabel.parent().find("span").text();
+                                Teams._injectChatbot(aadObjectId);
+                            } catch (err) {
+                                $("#TeamsError").remove();
+                                var contactName = $("#ctl00_cph_contact_name").val().split(", ").pop()
+                                $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: red;'>Unable to find Teams ID attribute for " + $("#ctl00_cph_contact_name").val().split(", ").pop() + "</p></div>")
+                                $("*").remove(".chatbot-container")
+                                console.error("Attribute error:\n", err)
+                            }
+                            break;
+                    }
+                },
+                _injectChatbot: async function (aadObjectId) {
+                    var url = Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID";
+                    var tenantID = await (await fetch(url)).text();
+                    $("body").append(`
+                    <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
+                       <iframe id="chatbot-iframe" src="" title="Marval Chatbot" allow="camera; microphone" style="position: absolute; z-index: 1000; border: none; height: 100%; width: 100%"></iframe>
+                    </div>
+                    `);
+
+                    // Get contact name as the firstname in the contact field (split from "lastname, firstname")
+                    var contactName = $("#ctl00_cph_contact_name").val().split(", ").pop()
+
+                    var url = Teams._getPluginPath() + "Handler.ashx?endpoint=ChatbotHostOverride";
+
+                    // Create and style the text content
+                    let fetchedChatbotHostOverride = await (await fetch(url)).text();
+                   
+                    
+                    $("#chatbot-iframe").attr("src", "https://" + fetchedChatbotHostOverride + "/chatbot-client?requestId=" + MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._requestId + "&aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName + "&agentName=" + $(".myServiceDesk").children("a").text());
+
+                    $("*").find(".chatbot-container").hide().fadeIn(300, function () { })
+
+                    let iframe = $("#chatbot-iframe")
+
+                    $("#TeamsError").remove();
+                    $("#TeamsPopup").append("<div id='TeamsError'><br><p style='color: green;'>Chatbot Connected</p></div>")
+                    setTimeout(function () {
+                        $("#ct100_overlay_id4").fadeOut(300, function () { Teams._pluginWindow.hide() });
+                        $("*").find('.initiate').prop('disabled', false);
+                    }, 1000)
+                },
+                _setUpQuickMenu: function () {
+                    var styleElement = window.top.document.createElement("style");
+                    window.top.document.body.appendChild(styleElement);
+                    var pathFormatted = this._getPluginPath().replace(" ", "%20");
+                    var quickMenuStr = ".MarvalSoftware-Teams-quick-menu-item { background-image: url(" + pathFormatted + "img/teams-32.png); }";
+                    styleElement.sheet.insertRule(quickMenuStr, 0);
+                    var quickMenuId = window.top.document.querySelector(".quickMenu").id;
+                    var quickMenu = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getControl(quickMenuId);
+                    quickMenu.addMenuItem({
+                        Identifier: "MarvalSoftware-Teams",
+                        Label: this._getString("@@PluginDisplayname"),
+                        HRef: "javascript:void(0);",
+                        CssClass: "MarvalSoftware-Teams-quick-menu-item"
+                    });
+                    quickMenu.onMenuItemClicked.subscribe(function (sender, e) {
+                        if (e.menuItem.getIdentifier() === "MarvalSoftware-Teams") {
+                            //this._preRequisiteCheck();
+                            this._popup();
+                        }
+                    }, this);
+                },
+                _onBtnClick: function () {
+                    event.preventDefault();
+                    $("*").find('.initiate').prop('disabled', true);
+                    Teams._startChat();
+                },
+                _createWindowElements: function () {
+                    $('.MarvalSoftware-Teams').append(` <div id="TeamsContainer"> </div> `);
+                    $("marvalsoftware-plugins-teams").empty()
+
+                    var isConnected = $("*").find("#chatbot-iframe").length > 0
+
+                    const div = window.top.document.createElement("div");
+                    div.className = "TeamsWindow";
+                    div.id = "TeamsPopup"
+                    $("#TeamsPopup").empty()
+
+                    const textContent = window.top.document.createElement("p");
+                    Teams._contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
+
+                    if (isConnected)
+                        textContent.innerHTML = 'You\'re already chatting to this ticket\'s contact <span style="font-weight:bold" id="contactEmailAddress"> (' + Teams._contactEmail + ')</span>. Reconnect?';
+                    else
+                        textContent.innerHTML = 'Chat to the contact for this ticket? <span style="font-weight:bold" id="contactEmailAddress"> (' + Teams._contactEmail + ') </span>';
+
+                    textContent.style.textAlign = "center";
+                    textContent.style.alignSelf = "center";
+                    textContent.style.marginTop = "60px";
+
+                    const Button = window.top.document.createElement("button");
+                    Button.innerHTML = isConnected ? "Reconnect" : "Start a chat"
+
+                    Button.style.marginTop = "20px";
+                    Button.className = "initiate";
+                    Button.style.width = "50%";
+                    Button.onclick = Teams._onBtnClick;
+                    Button.style.cursor = "pointer";
+
+                    var Disconnect = null
+
+                    if (isConnected) {
+
+                        Disconnect = window.top.document.createElement("button");
+                        Disconnect.innerHTML = "Disconnect";
+
+                        Disconnect.style.marginTop = "20px";
+                        Disconnect.className = "disconnectChatbot";
+                        Disconnect.style.width = "50%";
+                        Disconnect.onclick = Teams._disconnectChat;
+                        Disconnect.style.cursor = "pointer";
+
+                    }
+
+                    const loadingIndicator = window.top.document.createElement("div");
+                    loadingIndicator.className = "loadingIndicator";
+                    loadingIndicator.style.display = "none"; // Initially hidden
+                    loadingIndicator.innerText = "Searching..."; // Simple loading text (or use an icon)
+
+                    div.appendChild(textContent);
+
+                    div.appendChild(Button);
+                    if (Disconnect != null) {
+                        div.appendChild(Disconnect);
+                    }
+                    div.style.display = "flex";
+                    div.style.flexDirection = "column";
+                    div.style.alignItems = "center";
+                    div.style.justifyContent = "center";
+                    div.style.border = "none";
+                    div.style.padding = "0px";
+                    div.style.width = "100%";
+                    div.style.height = "100%";
+
+                    Teams.appendChild(div);
+                },
+                _disconnectChat: function () {
+                    event.preventDefault();
+                    $("marvalsoftware-plugins-teams").parent().parent().fadeOut(300, function () { Teams._pluginWindow.hide() });
+                    $("*").find(".chatbot-container").fadeOut(300, function () { $("*").remove(".chatbot-container"); })
+                    $("#TeamsPopup").remove()
+                },
+                _popup: function () {
+                    $("#TeamsError").remove();
+                    var that = this;
+                    if (!this._pluginWindow) {
+                        this._pluginWindow = new MarvalSoftware.UI.Window({
+                            appendToElement: window.top.document.getElementById("aspnetForm"),
+                            title: this._getString("@@PluginDisplayname"),
+                            height: 260,
+                            width: 432,
+                            minHeight: 260,
+                            minWidth: 432,
+                            isResizable: true,
+                            isMaximizable: true,
+                            bodyElement: this
+                        });
+                    }
+
+                    this._createWindowElements();
+
+                    if (!this._pluginWindow.isVisible()) {
+                        this._pluginWindow.centerToViewport();
+                    }
+                    this._pluginWindow.show();
+                    this._pluginWindow.hide();
+                    $("#ct100_overlay_id4").show();
+                    this._pluginWindow.show();
                 }
-                else if (action == "")
-                {
-
-                }
-                else
-                {
-
-                }
-                break;
-        }
-    }
-
-    private string GetDBString()
-    {
-        string connectionString = "";
-
-        string msmdLocation = GetAppPath("MSM");
-        string path = msmdLocation;
-        string newPath = Path.GetFullPath(Path.Combine(path, @"..\"));
-        string openFilePath = newPath + "connectionStrings.config";
-
-        XmlDocument xmlDoc = new XmlDocument();
-        xmlDoc.Load(openFilePath);
-
-        XmlNodeList nodeList = xmlDoc.SelectNodes("/appSettings/add[@key='DatabaseConnectionString']");
-
-        if (nodeList.Count > 0)
-        {
-            // Get the value attribute of the node
-            connectionString = nodeList[0].Attributes["value"].Value;
-        }
-        else
-        {
-        }
-        return connectionString;
-    }
-    private string GetAppPath(string productName)
-    {
-        const string foldersPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders";
-        var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-
-        var subKey = baseKey.OpenSubKey(foldersPath);
-        if (subKey == null)
-        {
-            baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            subKey = baseKey.OpenSubKey(foldersPath);
-        }
-        return subKey != null ? subKey.GetValueNames().FirstOrDefault(kv => kv.Contains(productName)) : "ERROR";
-    }
-
-    private string GetCustomersJSON(string CIId)
-    {
-        string connString = GetDBString();
-        using (SqlConnection conn = new SqlConnection())
-        {
-            conn.ConnectionString = connString;
-            using (SqlCommand cmd = new SqlCommand())
-            {
-                cmd.CommandText = "select guid from directoryRelationship where CIId = " + CIId;
-                cmd.Connection = conn;
-                conn.Open();
-                string returnVal = "";
-                using (SqlDataReader sdr = cmd.ExecuteReader())
-                {
-                    sdr.Read();
-                    returnVal = Convert.ToString(sdr["guid"]);
-                }
-                conn.Close();
-
-                return returnVal;
-            }
-        }
-    }
-
-}
+            });
+    })();
+</script>
