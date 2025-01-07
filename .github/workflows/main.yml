@@ -19,5 +19,5 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
           prerelease: false
-          title: Release ${{ steps.vars.outputs.sha_short }}
+          title: "Release ${{ steps.vars.outputs.sha_short }}"
           files: ${{ github.workspace }}/MarvalSoftware.Plugins.Teams.zip
