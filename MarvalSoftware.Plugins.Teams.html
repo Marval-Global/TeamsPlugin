@@ -4,7 +4,7 @@
         .pluginWrapper {
             display: none;
         }
-
+      
         .contactSearcher .telephone {
             width: 86px;
         }
@@ -88,36 +88,57 @@
                 _pluginWindow: null,
                 _popupBody: null,
                 init: function () {
+
                     Teams = this
                     console.log();
                     var currentUrl = window.top.location.href;
+              
                     var PWelement = $('#ctl00_ctl00_cph_entityHeaderText').text();
+                    
                     if (currentUrl.includes("Plugin.aspx") && PWelement == 'MarvalSoftware.Plugins.Teams') {
-
-
+                        
                         var that = this;
-                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
-                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', true);
-                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl07_value').parent().hide();
-                        
-                        
-                        function createCustomer() {
-                            var customernamecheck = $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value').val();
+                        $('#ctl00_ctl00_cph_maintenance_quickFields').hide();
 
+                       
+                     
+                        $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
+                        // $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', true);
+                        // $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl06_value').parent().hide();
+                       this._hideField("@@ChatbotHostOverride");
+                       this._hideField("@@Region");
+                       var fieldID = this._getFieldID("@@Region");
+                       var region = $('#' + fieldID).val();
+                       // console.log("Have region as ", region);
+                      
+                        function createCustomer() {
+                            var errors = 0;
+                            var customernamecheck = $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value').val();
+                            var tenantid = $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl03_value').val();
                             //$('#installPlugin').prop('disabled', true);
                             $('#errorText').text("");
                             if (customernamecheck === "" || customernamecheck === null) {
-
-
-                                $('#errorText').text("Please type a customer name under Global Settings below before activating the integration.");
-                            } else {
+                                errors++;
+                                $('#errorText').append("Customer Name is required.<br>");
+                                $("#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value").css("border", "1px solid red");
+                                
+                                $("#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl03_value").css("border", "1px solid red");
+                            } 
+                            if (tenantid === "" || tenantid === null) {
+                                errors++;
+                                $('#errorText').append("TenantID is required.<br>");
+                            }
+                           if (errors < 1) {
                                 //  $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', false);
                                 //   $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', false);
                                 $('#errorText').text("");
+                                // console.log("Tenant id is ", $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl03_value').val()); 
+                                
                                 var postData = {
-                                    "hostSource": window.top.location.href,
+                                    "hostSource": window.top.location.origin + "/MSM/",
                                     "customerName": customernamecheck,
-                                    "action": "createTeams"
+                                    "action": "createTeams",
+                                    "tenantID": tenantid
                                 };
                                 $('#installPlugin').after("<br>Creating record, please wait...");
                                 $.ajax({
@@ -149,25 +170,32 @@
                                 });
                             }
                         }
+                        
                         $('#ctl00_ctl00_cph_maintenance_pluginDetailsFieldSet').before(`
                    <br> <div>
    <fieldset>
-    <legend>Teams Integration</legend>
-
+    <legend id="teamsHeader">Teams Integration</legend>
+<label id="regionheader" >for="region">Region</label>
+<select id="region" name="region">
+  <option value="">--Select a region--</option>
+  <option value="asiapacific">Australia</option>
+  <option value="europe">UK</option>
+</select>
     <!-- <div id="itemsContainer"></div> -->
-
-    <span id="teamsPluginActivated">You have not yet activated the Teams Integration<br><a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">Click here</a> if you require infromation on how to configure the Teams plugin.</span><br><br>
+<br>
+    <span id="teamsPluginActivated" style="color:#073f5c"><br>You have not yet activated the Teams Integration<br>
+        <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">Click here</a> if you require infromation on how to configure the Teams plugin.</span><br><br>
     <button type="button" style="cursor:pointer" id="installPlugin">Activate Teams Integration</button><br>
-    <div style="cursor:pointer;display:none;" id="additionalInstructions">
-    <button type="button" style="cursor:pointer">Load Additional Instructions</button><br> <br>
+    <div style="display:none;" id="additionalInstructions">
+    <!-- <button type="button" style="cursor:pointer">Load Additional Instructions</button><br> <br> -->
     <span>
-        Now that you have initiated the install, please follow the additional instructions in the chatbot documentation <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">here</a> . <br><br>
-        This code will need to be placed into <b>Maintenance</b> | <b>Service</b> | <b>Self Service Customisation</b> under the AI Chatbot tab under the Private Key, Public Key and Code Snippet sections, respectively.<br>
+        Now that you have initiated the installation, please follow the additional instructions in the chatbot documentation <a href="https://chatbot-uk.marval.cloud/chatbot-documentation/" target="_blank">here</a><br><br>
+        The following code will need to be placed into <b>Maintenance</b> | <b>Service</b> | <b>Self Service Customisation</b> under the AI Chatbot tab under the Private Key, Public Key and Code Snippet sections, respectively.<br>
 
         <a id="privatekeydownload" href="">Download Private Key</a><br>
-        <a id="privatekeydownload" href="">Download Public Key</a><br>
-        <a id="codesnippetdownload" href="">Download Self Service Code Snippet</a><br>
-    <!-- The Issuer for the chatbot, is https://chatbot.marval.cloud/<br><br> -->
+        <a id="publickeydownload" href="">Download Public Key</a><br>
+        <a id="chatbotsnippetdownload" href="">Download Self Service Code Snippet</a><br>
+    <!-- The Issuer for the chatbot, is https://chatbot-uk.marval.cloud/<br><br> -->
      <span class="formSpan">
             <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button>
             <div id="responseContainer">
@@ -191,7 +219,18 @@
     </div>
    `);
 
+                      //   window.top.document.getElementById("region").onchange = Teams._setRegion;
+                         $('#region').on('change', function() {
+                         //   console.log("Top level region as ");
+                            var selectedValue = $(this).val();                // e.g. "asia-pacific"
+  //var selectedText = $(this).find('option:selected').text();  // e.g. "Asia Pacific"
+
+  //console.log(selectedValue, selectedText);
+  Teams._setRegion(selectedValue);
+                         });
+
                         window.top.document.getElementById("installPlugin").onclick = createCustomer;
+                        
                         var field = $("label").filter(function () {
                             return $(this).text() == "@@AADObjectGUIDLocation";
                         }).parent()
@@ -210,6 +249,17 @@
                         Teams._renderObjectLocationDropdown();
 
                         window.top.document.getElementById("objectLocationDropdown").onchange = Teams._onDropdown;
+                        if (!region) {
+                        $('#ctl00_ctl00_cph_maintenance_overviewTabPage').hide();
+                        $('#teamsHeader').detach().appendTo('.tabPages');
+                        $('#region').detach().appendTo('.tabPages');
+                   //   $('#region').show();
+                        $('#teamsHeader').show();
+                    } else {
+                        $('#region').hide();
+                        $('#regionheader').hide();
+                        this._setDownloadLinks();
+                    }
 
                     } else if (currentUrl.includes("Request.aspx")) {
                         this._requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
@@ -218,15 +268,17 @@
                         }
                     }
 
-                    if ($('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val()) {
+                   
+                    document.addEventListener('DOMContentLoaded', function () {
+                        if ($('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val()) {
                         $('#installPlugin').hide();
                         $('#additionalInstructions').show();
                         $('#teamsPluginActivated').hide();
                         // $('#testPlugin').show();
                     } else {
 
+
                     }
-                    document.addEventListener('DOMContentLoaded', function () {
                         var page = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage();
 
                         // attach the display element
@@ -235,7 +287,38 @@
                         this._imageElement = this._element.querySelector('#MarvalSoftware-Plugins-Teams');
                         //   page._contactSearcher._extensionInput.parentElement.insertBefore(this._element, page._contactSearcher._extensionInput.nextSibling);
                     }.bind(this));
+                  
                 }, // End init
+                _hideField: function (fieldName) {
+                    var ChatbotField = $("label").filter(function () {
+                          return $(this).text() == fieldName;
+                        }).parent();
+
+                       var cbField = ChatbotField.find("input").attr("id");
+                       console.log("cbField is ", cbField);
+                       $('#' + cbField).parent().hide();
+                },
+                _getFieldID: function (fieldName) {
+                    var ChatbotField = $("label").filter(function () {
+                          return $(this).text() == fieldName;
+                        }).parent();
+
+                       var cbField = ChatbotField.find("input").attr("id");
+                       return cbField;
+                },
+                _setDownloadLinks: async function () {
+                    var getprivatekey = Teams._getPluginPath() + "Handler.ashx?endpoint=getprivatekey";
+                    var getpublickey = Teams._getPluginPath() + "Handler.ashx?endpoint=getpublickey";
+                    var getchatbotsnippet = Teams._getPluginPath() + "Handler.ashx?endpoint=getchatbotsnippet";
+                   // let fetchedChatbotHostOverride = await (await fetch(url)).text();
+                    //var id = fetch(fetchedChatbotHostOverride).text();
+                    // console.log("Have ChatbotHostOverride as ", fetchedChatbotHostOverride);
+                    // var url = Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID";
+                    // var tenantID = await (await fetch(url)).text();
+                    $('#privatekeydownload').attr('href',getprivatekey);
+                    $('#publickeydownload').attr('href',getpublickey);
+                    $('#chatbotsnippetdownload').attr('href',getchatbotsnippet);
+                },
                 _setTeamsLink: function () {
                     String.prototype.format = function () {
                         var args = arguments;
@@ -247,14 +330,14 @@
                         var contactEmail = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getContactPreferredEmail();
                         // var contactName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._contactSearcher._nameInput.value.split(', ')[1].split(' ')[0];
                         // var requestNumber = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._requestTypeAcronym + "-" + MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage().getRequestNumber();
-                        //  var currentUserName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._mainMenu._menuBar._menuItems[2]._element.children[0].innerHTML.split(' ')[0];
+                        // var currentUserName = MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._mainMenu._menuBar._menuItems[2]._element.children[0].innerHTML.split(' ')[0];
                         // var teamsLink = "https://teams.microsoft.com/l/chat/0/0?users={0}&message=Hi {1}, {2} from IT is here, do you have a moment to talk about {3}?".format(contactEmail, contactName, currentUserName, requestNumber);
-                        //  this._imageElement.src = this._getPluginPath() + "img/microsoft-teams.png";
-                        //   this._imageElement.setAttribute("onClick", "window.open('" + teamsLink + "', '_blank');");
+                        // this._imageElement.src = this._getPluginPath() + "img/microsoft-teams.png";
+                        // this._imageElement.setAttribute("onClick", "window.open('" + teamsLink + "', '_blank');");
                         this._imageElement.style.display = "inline";
                     } catch {
                         // hide the button if any of the parameters can not be loaded
-                        //this._imageElement.style.display = "none";
+                        // this._imageElement.style.display = "none";
                     }
                 }, // End _setTeamsLink
                 _renderObjectLocationDropdown() {
@@ -265,16 +348,14 @@
                     var clientField = $("label").filter(function () {
                         return $(this).text() == "@@ClientID"
                     }).parent()
-
+                    
                     field.find("input").hide();
 
                     var aadObjectId = field.find("input").val();
-
                     switch (aadObjectId) {
                         case "entra":
                             clientField.hide();
                             field.find("select").val("In Marval");
-
                             break;
                         case "microsoft":
                             clientField.find(".largeLabel").html("Application (Client) ID");
@@ -291,6 +372,17 @@
                             Teams._renderObjectLocationDropdown();
                             break;
                     }
+                },
+                _setRegion: function (field) {
+                 console.log("Setting region to ", field);
+                    var regionField = $("label").filter(function () {
+                        return $(this).text() == "@@Region";
+                    }).parent();
+                    regionField.find("input").val(field);
+                   
+                    console.log("Have set region field") 
+                    $('#ctl00_ctl00_cph_apply_fakeApplyButton').click();
+                    // console.log("Have region field as ", rfields);
                 },
                 _onDropdown: function (field, clientField) {
                     var field = $("label").filter(function () {
