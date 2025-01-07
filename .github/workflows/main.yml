@@ -8,10 +8,9 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
-      - name: Zip files
-        run: zip -r Teams.zip ${{ github.workspace }}
+      - uses: actions/checkout@v4
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: Release
-          path: Teams.zip
+          path: ${{github.workspace}}
