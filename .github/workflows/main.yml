@@ -8,10 +8,10 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
+      - name: List files
+        run: ls
       - name: Zip files
-        run: |
-          ls
-          zip -r Teams.zip .
+        run: zip -r Teams.zip .
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
