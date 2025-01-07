@@ -17,7 +17,7 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          automatic_release_tag: ${{ steps.vars.outputs.sha_short }}
           prerelease: false
-          title: "Release ${{ steps.vars.outputs.sha_short }}"
+          title: ${{ steps.vars.outputs.sha_short }}
           files: ${{ github.workspace }}/MarvalSoftware.Plugins.Teams.zip
