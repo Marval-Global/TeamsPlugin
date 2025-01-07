@@ -36,12 +36,17 @@ public class Handler : PluginHandler
     private string TenantID { get { return this.GlobalSettings["@@TenantID"]; } }
     private string CustomerName { get { return this.GlobalSettings["@@CustomerName"]; } }
     private string AADObjectGUIDLocation { get { return this.GlobalSettings["@@AADObjectGUIDLocation"]; } }
-    private string MarvalAPIKey { get { return this.GlobalSettings["@@MarvalAPIKey"]; } }
+
+    private string SecretKey { get { return this.GlobalSettings["@@SecretKey"]; } }
+
+    
+    private string Region { get { return this.GlobalSettings["@@Region"]; } }
     private string ChatbotHostOverride
     {
         get
         {
-            return this.GlobalSettings["@@ChatbotHostOverride"] == "" ? "chatbot.marval.cloud" : this.GlobalSettings["@@ChatbotHostOverride"];
+           string host = Region == "asiapacific" ? "chatbot-au.marval.cloud" : "chatbot-uk.marval.cloud";
+            return this.GlobalSettings["@@ChatbotHostOverride"] == "" ? host : this.GlobalSettings["@@ChatbotHostOverride"];
         }
     }
 
@@ -118,6 +123,7 @@ public class Handler : PluginHandler
                 var getParamVal = context.Request.Params["endpoint"] ?? string.Empty;
                 if (getParamVal == "createTeams")
                 {
+                    
                     var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/", "");
 
                     context.Response.Write("Hi");
@@ -134,6 +140,37 @@ public class Handler : PluginHandler
                 else if (getParamVal == "TenantID")
                 {
                     context.Response.Write(TenantID);
+                }
+                else if (getParamVal == "getprivatekey")
+                {
+                       var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/downloadFile", "{  \"secretKey\":\""  + SecretKey + "\", \"file\": \"getprivatekey\",  \"tenantId\":\""  + TenantID + "\", \"region\":\""  + Region + "\"}");
+                       context.Response.Clear();
+                       context.Response.ContentType = "application/octet-stream"; // or "text/plain" if it's text
+                       context.Response.AddHeader("Content-Disposition", "attachment; filename=privatekey.txt");
+                       context.Response.Write(response);
+                       context.Response.Flush();
+                       context.Response.End();
+                     
+                }
+                else if (getParamVal == "getpublickey")
+                {
+                       var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/downloadFile", "{  \"secretKey\":\""  + SecretKey + "\", \"file\": \"getpublickey\",  \"tenantId\":\""  + TenantID + "\", \"region\":\""  + Region + "\"}");
+                       context.Response.Clear();
+                       context.Response.ContentType = "application/octet-stream"; // or "text/plain" if it's text
+                       context.Response.AddHeader("Content-Disposition", "attachment; filename=publickey.txt");
+                       context.Response.Write(response);
+                       context.Response.Flush();
+                       context.Response.End();
+                }
+                else if (getParamVal == "getchatbotsnippet")
+                {
+                    var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/downloadFile", "{  \"secretKey\":\""  + SecretKey + "\", \"file\": \"getchatbotsnippet\",  \"tenantId\":\""  + TenantID + "\", \"region\":\""  + Region + "\"}");
+                       context.Response.Clear();
+                       context.Response.ContentType = "application/octet-stream"; // or "text/plain" if it's text
+                       context.Response.AddHeader("Content-Disposition", "attachment; filename=chatbotsnippet.txt");
+                       context.Response.Write(response);
+                       context.Response.Flush();
+                       context.Response.End();
                 }
                 else if (getParamVal == "databaseValue")
                 {
@@ -163,7 +200,7 @@ public class Handler : PluginHandler
 
 
                         // Make the POST request
-                        var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/createCustomer", "{ \"MarvalAPIKey\": \"" + this.MarvalAPIKey + "\", \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
+                        var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/createCustomer", "{ \"tenantId\": \"" + tenantId + "\", \"hostSource\": \"" + hostSource + "\", \"customerName\": \"" + customerName + "\"}");
                         // Write the response back
                         context.Response.Write(response);
                     }
