@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Zip files
-        run: zip -r Teams.zip ${{ github.workspace }}/ --include \*
+        run: zip -r Teams.zip ${{ github.workspace }}
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
