@@ -12,5 +12,13 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Teams
+          name: MarvalSoftware.Plugins.Teams.zip
           path: ${{github.workspace}}/*
+      - uses: actions/download-artifact@v4
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: false
+          title: "Latest Release"
+          files: ${{ github.workspace }}/MarvalSoftware.Plugins.Teams.zip
