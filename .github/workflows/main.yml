@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  my_job:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Zip files
+        run: zip Teams.zip *
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release
+          path: Teams.zip
