@@ -9,7 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Zip files
-        run: zip -r Teams.zip .
+        run: |
+          ls
+          zip -r Teams.zip .
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
