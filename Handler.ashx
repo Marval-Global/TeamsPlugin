@@ -137,6 +137,10 @@ public class Handler : PluginHandler
                 {
                     context.Response.Write(ClientID);
                 }
+                else if (getParamVal == "generatePassword") {
+                   var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/generatePassword", "{  \"secretkey\":\""  + SecretKey + "\",  \"tenantId\":\""  + TenantID + "\"}");
+                   context.Response.Write(response);
+        }
                 else if (getParamVal == "TenantID")
                 {
                     context.Response.Write(TenantID);
