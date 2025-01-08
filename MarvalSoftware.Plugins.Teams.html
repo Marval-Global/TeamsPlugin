@@ -110,7 +110,13 @@
                        var fieldID = this._getFieldID("@@Region");
                        var region = $('#' + fieldID).val();
                        // console.log("Have region as ", region);
-                      
+                       async function createPassword() {
+
+                          var url = Teams._getPluginPath() + "Handler.ashx?endpoint=generatePassword";
+                          var password = await (await fetch(url)).text();
+                          console.log("Have password back as ", password);
+
+                       }
                         function createCustomer() {
                             var errors = 0;
                             var customernamecheck = $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value').val();
@@ -175,7 +181,7 @@
                    <br> <div>
    <fieldset>
     <legend id="teamsHeader">Teams Integration</legend>
-<label id="regionheader" >for="region">Region</label>
+<label id="regionheader" for="region">Region</label>
 <select id="region" name="region">
   <option value="">--Select a region--</option>
   <option value="asiapacific">Australia</option>
@@ -197,7 +203,8 @@
         <a id="chatbotsnippetdownload" href="">Download Self Service Code Snippet</a><br>
     <!-- The Issuer for the chatbot, is https://chatbot-uk.marval.cloud/<br><br> -->
      <span class="formSpan">
-            <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button>
+            <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button><br>
+            <button style="cursor:pointer;" id="generatepassword">Generate New Passowrd</button><br>
             <div id="responseContainer">
                 <pre id="formattedResponse"></pre>
             </div>
@@ -228,7 +235,8 @@
   //console.log(selectedValue, selectedText);
   Teams._setRegion(selectedValue);
                          });
-
+                         
+                         window.top.document.getElementById("generatepassword").onclick = generatePassword;
                         window.top.document.getElementById("installPlugin").onclick = createCustomer;
                         
                         var field = $("label").filter(function () {
