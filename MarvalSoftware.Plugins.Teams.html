@@ -100,21 +100,24 @@
                         var that = this;
                         $('#ctl00_ctl00_cph_maintenance_quickFields').hide();
 
-                       
-                     
                         $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
-                        // $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', true);
+                         $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', true);
                         // $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl06_value').parent().hide();
                        this._hideField("@@ChatbotHostOverride");
                        this._hideField("@@Region");
                        var fieldID = this._getFieldID("@@Region");
                        var region = $('#' + fieldID).val();
                        // console.log("Have region as ", region);
-                       async function createPassword() {
-
+                       async function generatePassword() {
+                        $('#generatepassword').prop('disabled', true);
+                          event.preventDefault();
                           var url = Teams._getPluginPath() + "Handler.ashx?endpoint=generatePassword";
-                          var password = await (await fetch(url)).text();
-                          console.log("Have password back as ", password);
+                          var password = await (await fetch(url)).json();
+                          if (password.error) {
+                            $('#generatepassword').after('<br><span style="color:red">' + password.error + '</span>');
+                          } else {
+                            $('#generatepassword').after('<br><br><span style="color:blue">Generated password is ' + password.password + ' this password is encrypted and cannot be retireved after this page is reloaded.</span>');
+                          }
 
                        }
                         function createCustomer() {
@@ -203,7 +206,7 @@
         <a id="chatbotsnippetdownload" href="">Download Self Service Code Snippet</a><br>
     <!-- The Issuer for the chatbot, is https://chatbot-uk.marval.cloud/<br><br> -->
      <span class="formSpan">
-            <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button><br>
+            <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button><br><br>
             <button style="cursor:pointer;" id="generatepassword">Generate New Passowrd</button><br>
             <div id="responseContainer">
                 <pre id="formattedResponse"></pre>
