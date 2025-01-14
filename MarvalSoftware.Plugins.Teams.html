@@ -98,6 +98,7 @@
                     if (currentUrl.includes("Plugin.aspx") && PWelement == 'MarvalSoftware.Plugins.Teams') {
                         
                         var that = this;
+                        
                         $('#ctl00_ctl00_cph_maintenance_quickFields').hide();
 
                         $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
@@ -108,6 +109,26 @@
                        var fieldID = this._getFieldID("@@Region");
                        var region = $('#' + fieldID).val();
                        // console.log("Have region as ", region);
+                       async function getLatestPluginVersion() {
+                         var url = "https://raw.githubusercontent.com/Marval-Australia/TeamsPlugin/refs/heads/main/manifest.json";
+                         var githubPluginVersion = await (await fetch(url)).json();
+                         var pagePluginVersion = $('#ctl00_ctl00_cph_maintenance_version').text();
+                         if (pagePluginVersion == githubPluginVersion) {
+                         $('#ctl00_ctl00_cph_maintenance_pluginDetailsFieldSet').before(`
+                             <div style="color:green !important;font-weight:bold">Plugin version check completed successfully<br><br>
+                         `);
+                         } else {
+                             $('#ctl00_ctl00_cph_maintenance_pluginDetailsFieldSet').before(`
+                   <br> <div>
+                    <span style="color:red !important;font-weight:bold" >Your plugin is not up to date, download the latest version <a href="https://github.com/Marval-Australia/TeamsPlugin/releases/latest/download/MarvalSoftware.Plugins.Teams.zip">here</a>
+                    </div><br><br>
+
+                    `);
+                         }
+                        // console.log("Have version as '%s' and version is  '%s' ", gitHubVersionCheck.Version, textval);
+
+                       }
+
                        async function generatePassword() {
                         $('#generatepassword').prop('disabled', true);
                           event.preventDefault();
@@ -194,6 +215,7 @@
 <br>
     <span id="teamsPluginActivated" style="color:#073f5c"><br>You have not yet activated the Teams Integration<br>
         <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">Click here</a> if you require infromation on how to configure the Teams plugin.</span><br><br>
+
     <button type="button" style="cursor:pointer" id="installPlugin">Activate Teams Integration</button><br>
     <div style="display:none;" id="additionalInstructions">
     <!-- <button type="button" style="cursor:pointer">Load Additional Instructions</button><br> <br> -->
@@ -238,7 +260,7 @@
   //console.log(selectedValue, selectedText);
   Teams._setRegion(selectedValue);
                          });
-                         
+                         getLatestPluginVersion();
                          window.top.document.getElementById("generatepassword").onclick = generatePassword;
                         window.top.document.getElementById("installPlugin").onclick = createCustomer;
                         
