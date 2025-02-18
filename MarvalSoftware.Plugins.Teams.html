@@ -5,7 +5,7 @@
         .pluginWrapper {
             display: none;
         }
-      
+
         .contactSearcher .telephone {
             width: 86px;
         }
@@ -93,13 +93,13 @@
                     Teams = this
                     console.log();
                     var currentUrl = window.top.location.href;
-              
+
                     var PWelement = $('#ctl00_ctl00_cph_entityHeaderText').text();
-                    
+
                     if (currentUrl.includes("Plugin.aspx") && PWelement == 'MarvalSoftware.Plugins.Teams') {
-                        
+
                         var that = this;
-                        
+
                         $('#ctl00_ctl00_cph_maintenance_quickFields').hide();
 
                         $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
@@ -144,7 +144,19 @@
                           } else {
                             $('#generatepassword').after('<br><br><span style="color:blue">Generated password is ' + password.password + ' this password is encrypted and cannot be retrieved after this page is reloaded.</span>');
                           }
+                          return password
 
+                       }
+                       function loginSettings() {
+                         event.preventDefault();
+                         generatePassword().then(password => {
+                           if (password.error) {
+                             $('#settingslogin').after('<br><span style="color:red">Unable to login: ' + password.error + '</span><br>');
+                           } else {
+                             password = password.password;
+                             window.open("https://devchatbot.dj.id.au/chatbot-settings?pwd=" + password + "&tenantId=" + $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl03_value').val(), "_blank");
+                           }
+                         })
                        }
                         function createCustomer() {
                             var errors = 0;
@@ -156,9 +168,9 @@
                                 errors++;
                                 $('#errorText').append("Customer Name is required.<br>");
                                 $("#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl01_value").css("border", "1px solid red");
-                                
+
                                 $("#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl03_value").css("border", "1px solid red");
-                            } 
+                            }
                             if (tenantid === "" || tenantid === null) {
                                 errors++;
                                 $('#errorText').append("TenantID is required.<br>");
@@ -167,8 +179,8 @@
                                 //  $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', false);
                                 //   $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl02_value').prop('disabled', false);
                                 $('#errorText').text("");
-                                // console.log("Tenant id is ", $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl03_value').val()); 
-                                
+                                // console.log("Tenant id is ", $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl03_value').val());
+
                                 var postData = {
                                     "hostSource": window.top.location.origin + "/MSM/",
                                     "customerName": customernamecheck,
@@ -205,7 +217,7 @@
                                 });
                             }
                         }
-                        
+
                         $('#ctl00_ctl00_cph_maintenance_pluginDetailsFieldSet').before(`
                    <br> <div>
    <fieldset>
@@ -234,7 +246,8 @@
     <!-- The Issuer for the chatbot, is https://chatbot.marval.cloud/<br><br> -->
      <span class="formSpan">
             <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button><br><br>
-            <button style="cursor:pointer;" id="generatepassword">Generate New Password</button><br>
+            <button style="cursor:pointer;" id="generatepassword">Generate New Password</button><br><br>
+            <button style="cursor:pointer;" id="settingslogin">Chatbot Settings</button><br>
             <div id="responseContainer">
                 <pre id="formattedResponse"></pre>
             </div>
@@ -267,7 +280,8 @@
                          getLatestPluginVersion();
                          window.top.document.getElementById("generatepassword").onclick = generatePassword;
                         window.top.document.getElementById("installPlugin").onclick = createCustomer;
-                        
+                        window.top.document.getElementById("settingslogin").onclick = loginSettings;
+
                         var field = $("label").filter(function () {
                             return $(this).text() == "@@AADObjectGUIDLocation";
                         }).parent()
@@ -305,7 +319,7 @@
                         }
                     }
 
-                   
+
                     document.addEventListener('DOMContentLoaded', function () {
                         if ($('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').val()) {
                         $('#installPlugin').hide();
@@ -324,7 +338,7 @@
                         this._imageElement = this._element.querySelector('#MarvalSoftware-Plugins-Teams');
                         //   page._contactSearcher._extensionInput.parentElement.insertBefore(this._element, page._contactSearcher._extensionInput.nextSibling);
                     }.bind(this));
-                  
+
                 }, // End init
                 _hideField: function (fieldName) {
                     var ChatbotField = $("label").filter(function () {
@@ -385,7 +399,7 @@
                     var clientField = $("label").filter(function () {
                         return $(this).text() == "@@ClientID"
                     }).parent()
-                    
+
                     field.find("input").hide();
 
                     var aadObjectId = field.find("input").val();
@@ -416,8 +430,8 @@
                         return $(this).text() == "@@Region";
                     }).parent();
                     regionField.find("input").val(field);
-                   
-                    console.log("Have set region field") 
+
+                    console.log("Have set region field")
                     $('#ctl00_ctl00_cph_apply_fakeApplyButton').click();
                     // console.log("Have region field as ", rfields);
                 },
@@ -577,8 +591,8 @@
 
                     // Create and style the text content
                     let fetchedChatbotHostOverride = await (await fetch(url)).text();
-                   
-                    
+
+
                   //  $("#chatbot-iframe").attr("src", "https://" + fetchedChatbotHostOverride + "/chatbot-client?requestId=" + MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._requestId + "&aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName + "&agentName=" + $(".myServiceDesk").children("a").text());
                   $("#chatbot-iframe").attr("src", "https://" + fetchedChatbotHostOverride + "/chatbot-client?requestId=" + MarvalSoftware.UI.Controls.ScriptManager.getInstance().getPage()._requestId + "&aadObjectId=" + aadObjectId + "&tenantId=" + tenantID + "&contactName=" + contactName + "&agentName=" + $(".myServiceDesk").children("a").text());
 
