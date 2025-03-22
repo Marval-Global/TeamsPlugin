@@ -485,10 +485,36 @@
                     $("*").remove("#TeamsError");
                     $("#TeamsPopup").append(`<div id='TeamsError'><br><img src="` + Teams._getPluginPath() + `img/spinner.gif" width="32px" height="32px"/></div>`)
 
+                    let hostString = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=ChatbotHostOverride")).text()
+                    let tenantId = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID")).text()
+                    let secret = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=SecretKey")).text()
+
+                    let aadCacheObject = await fetch("https://" + hostString + "/api/chatbot/aadobject?email=" + encodeURIComponent(Teams._contactEmail) + "&tenantId=" + tenantId, {
+                      method: "GET"
+                    })
+                    if (aadCacheObject.ok) {
+                      Teams._injectChatbot(await aadCacheObject.text());
+                    } else {
                     switch (await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=AADObjectGUIDLocation")).text()) {
                         case "entra":
                             try {
                                 let dbVal = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=databaseValue&CIId=" + $("#ctl00_cph_contact_value").attr("value"))).text()
+
+                                if (dbVal.test(/\A[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}\Z/)) { // check valid uuid
+                                  fetch("https://" + hostString + "/api/chatbot/aadobjectWithToken", {
+                                    method: "POST",
+                                    body: {
+                                      aadObjectIds: [
+                                        {
+                                          userEmail: Teams._contactEmail,
+                                          aadObjectId: dbVal
+                                        }
+                                      ],
+                                      token: secret,
+                                      tenantId: tenantId
+                                    }
+                                  })
+                                }
 
                                 Teams._injectChatbot(dbVal);
 
@@ -529,7 +555,22 @@
                                     throw Error("Search for contact returned no results.")
                                     } else {
 
-                                            Teams._injectChatbot(result.value[0].id);
+                                      if (result.value[0].id.test(/\A[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}\Z/)) { // check valid uuid
+                                        fetch("https://" + hostString + "/api/chatbot/aadobjectWithToken", {
+                                          method: "POST",
+                                          body: {
+                                            aadObjectIds: [
+                                              {
+                                                userEmail: Teams._contactEmail,
+                                                aadObjectId: result.value[0].id
+                                              }
+                                            ],
+                                            token: secret,
+                                            tenantId: tenantId
+                                          }
+                                        })
+                                      }
+                                      Teams._injectChatbot(result.value[0].id);
                                     }
 
                                 } catch (err) {
@@ -564,6 +605,21 @@
                                 }
 
                                 var aadObjectId = attrLabel.parent().find("span").text();
+                                if (aadObjectId.test(/\A[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}\Z/)) { // check valid uuid
+                                  fetch("https://" + hostString + "/api/chatbot/aadobjectWithToken", {
+                                    method: "POST",
+                                    body: {
+                                      aadObjectIds: [
+                                        {
+                                          userEmail: Teams._contactEmail,
+                                          aadObjectId: aadObjectId
+                                        }
+                                      ],
+                                      token: secret,
+                                      tenantId: tenantId
+                                    }
+                                  })
+                                }
                                 Teams._injectChatbot(aadObjectId);
                             } catch (err) {
                                 $("#TeamsError").remove();
@@ -573,6 +629,9 @@
                                 console.error("Attribute error:\n", err)
                             }
                             break;
+
+                        }
+
                     }
                 },
                 _injectChatbot: async function (aadObjectId) {

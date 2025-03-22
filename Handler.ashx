@@ -39,7 +39,7 @@ public class Handler : PluginHandler
 
     private string SecretKey { get { return this.GlobalSettings["@@SecretKey"]; } }
 
-    
+
     private string Region { get { return this.GlobalSettings["@@Region"]; } }
     private string ChatbotHostOverride
     {
@@ -123,7 +123,7 @@ public class Handler : PluginHandler
                 var getParamVal = context.Request.Params["endpoint"] ?? string.Empty;
                 if (getParamVal == "createTeams")
                 {
-                    
+
                     var response = PostRequest("https://" + this.ChatbotHostOverride + "/api/server/", "");
 
                     context.Response.Write("Hi");
@@ -154,7 +154,7 @@ public class Handler : PluginHandler
                        context.Response.Write(response);
                        context.Response.Flush();
                        context.Response.End();
-                     
+
                 }
                 else if (getParamVal == "getpublickey")
                 {
@@ -185,6 +185,10 @@ public class Handler : PluginHandler
                 else if (getParamVal == "AADObjectGUIDLocation")
                 {
                     context.Response.Write(AADObjectGUIDLocation);
+                }
+                else if (getParamVal == "SecretKey")
+                {
+                    context.Response.Write(SecretKey);
                 }
                 else
                 {
