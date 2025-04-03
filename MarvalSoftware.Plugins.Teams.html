@@ -569,6 +569,8 @@
                                             tenantId: tenantId
                                           }
                                         })
+                                      } else {
+                                        console.log("Could not match GUID")
                                       }
                                       Teams._injectChatbot(result.value[0].id);
                                     }
