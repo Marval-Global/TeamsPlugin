@@ -2,6 +2,9 @@
 <script type="text/javascript" src="Template.js"></script>
 <template>
     <style>
+    
+   
+        
         .pluginWrapper {
             display: none;
         }
@@ -99,6 +102,7 @@
                     if (currentUrl.includes("Plugin.aspx") && PWelement == 'MarvalSoftware.Plugins.Teams') {
 
                         var that = this;
+                      
 
                         $('#ctl00_ctl00_cph_maintenance_quickFields').hide();
 
@@ -116,23 +120,43 @@
                          var pagePluginVersion = $('#ctl00_ctl00_cph_maintenance_version').text();
                          console.log("Two versions are %s and %s ", pagePluginVersion, githubPluginVersion.Version);
                          if (pagePluginVersion == githubPluginVersion.Version) {
-                         $('#teamsHeader').before(`
-                             <div id="uptodatemessage" style="color:green !important;font-size:16px;font-weight:bold">Plugin is up to date!<br><br>
+                         $('.content').before(`
+                             <div id="uptodatemessage" style="padding-left:580px;color:green !important;font-size:16px;font-weight:bold;display:none">Plugin is up to date!<br><br>
                          `);
+                         $('#uptodatemessage').fadeIn(250);
                          setTimeout(() => {
-                            $('#uptodatemessage').fadeOut(1000);
+                           $('#uptodatemessage').fadeOut(1000);
                          }, 2000);
                          } else {
-                             $('#teamsHeader').before(`
+                             $('.content').before(`
                    <br> <div>
-                    <span style="color:red !important;font-weight:bold;font-size:16px" >Your plugin is not up to date, download the latest version <a href="https://github.com/Marval-Australia/TeamsPlugin/releases/latest/download/MarvalSoftware.Plugins.Teams.zip">here</a>
+                    <span style="style="padding-left:580px; color:red !important;font-weight:bold;font-size:16px" >Your plugin is not up to date, download the latest version <a href="https://github.com/Marval-Australia/TeamsPlugin/releases/latest/download/MarvalSoftware.Plugins.Teams.zip">here</a>
                     </div><br><br>
 
                     `);
                          }
-                        // console.log("Have version as '%s' and version is  '%s' ", gitHubVersionCheck.Version, textval);
-
                        }
+
+                       $(document).ready(function() {
+      $('head').append(`
+        <style>
+          .hrefButton {
+            display: inline-block;
+            background-color: #1696B7;
+            color: #ffffff;
+            padding: 8px 12px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+          }
+          .hrefButton:hover {
+            background-color: #0056b3;
+             color: #ffffff;
+          }
+        </style>
+      `);
+    });
 
                        async function generatePassword() {
                         $('#generatepassword').prop('disabled', true);
@@ -229,42 +253,48 @@
   <option value="europe">UK</option>
 </select>
     <!-- <div id="itemsContainer"></div> -->
-<br>
-    <span id="teamsPluginActivated" style="color:#073f5c"><br>You have not yet activated the Teams Integration<br>
-        <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">Click here</a> if you require information on how to configure the Teams plugin.</span><br><br>
+
+    <p><span id="teamsPluginActivated" style="color:#073f5c"><br>You have not yet activated the Teams Integration
+        <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">Click here</a> if you require information on how to configure the Teams plugin.</span></p>
 
     <button type="button" style="cursor:pointer" id="installPlugin">Activate Teams Integration</button><br>
     <div style="display:none;" id="additionalInstructions">
     <!-- <button type="button" style="cursor:pointer">Load Additional Instructions</button><br> <br> -->
-    <span>
-        Now that you have initiated the installation, please follow the additional instructions in the chatbot documentation <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">here</a><br><br>
-        The following code will need to be placed into <b>Maintenance</b> | <b>Service</b> | <b>Self Service Customisation</b> under the AI Chatbot tab under the Private Key, Public Key and Code Snippet sections, respectively.<br>
+    <span class="formSpan" style="vertical-align:middle; display:inline-block;">
+       
+       
+        <p>In order to use the virtual agent, the contents of the following three text files will need to be placed into <b>Maintenance</b> | <b>Service</b> | <b>Self Service Customisation</b> under the AI Chatbot tab under the Private Key, Public Key and Code Snippet sections, respectively.</p>
 
-        <a id="privatekeydownload" href="">Download Private Key</a><br>
-        <a id="publickeydownload" href="">Download Public Key</a><br>
-        <a id="chatbotsnippetdownload" href="">Download Self Service Code Snippet</a><br>
+        <a class="hrefButton" id="privatekeydownload" href="">Download Private Key</a>&nbsp;&nbsp;&nbsp; <a class="hrefButton" id="publickeydownload" href="">Download Public Key</a>&nbsp;&nbsp;&nbsp;
+        <a class="hrefButton" id="chatbotsnippetdownload" href="">Download Self Service Code Snippet</a><br>
     <!-- The Issuer for the chatbot, is https://chatbot.marval.cloud/<br><br> -->
      <span class="formSpan">
-            <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button><br><br>
-            <button style="cursor:pointer;" id="generatepassword">Generate New Password</button><br><br>
-            <button style="cursor:pointer;" id="settingslogin">Chatbot Settings</button><br>
+         <!--   <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button><br><br> -->
+
+           
             <div id="responseContainer">
                 <pre id="formattedResponse"></pre>
             </div>
         </span>
     </div>
-
+<div id="pluginStatus"></div>
     <!--<a href="https://azure.microsoft.com/en-us/pricing/details/bot-services/">Azure Bot Pricing</href> -->
 
       <div style="color:red" id="errorText"></div>
        <div style="color:green" id="successText"></div>
     <div id="savebuttonConfirm" style="color:green;font-weight:bold; display: none"><br><span style="color:green">Install Initiated</span><br></div>
     </fieldset>
-    <br><br>
-    <fieldset style="display: none;cursor:pointer;width: 800px" id="testPlugin">
+     <fieldset>
+    <legend id="teamsHeader">Chatbot Settings Page</legend>
+         <button class="hrefButton" style="cursor:pointer;padding: 2px 12px;" id="generatepassword">Generate New Password</button>&nbsp;&nbsp;&nbsp;&nbsp;
+            <button class="hrefButton" style="cursor:pointer;padding: 2px 12px;" id="settingslogin">Load</button><br>
+    </fieldset>
+    <br>
+    <!--<fieldset style="display: none;cursor:pointer;width: 800px" id="testPlugin">
         <legend>Test Teams Integration</legend><br>
 
-    </fieldset>
+    </fieldset> -->
+     <p>To load the documentation for the chatbot, click <a href="https://chatbot.marval.cloud/chatbot-documentation/" target="_blank">here</a></p>
     </div>
    `);
 
