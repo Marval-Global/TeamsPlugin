@@ -500,7 +500,7 @@
                             try {
                                 let dbVal = await (await fetch(Teams._getPluginPath() + "Handler.ashx?endpoint=databaseValue&CIId=" + $("#ctl00_cph_contact_value").attr("value"))).text()
 
-                               if (/^[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}$/.test(result.value[0].id)) { // check valid uuid
+                                  if (dbVal.test(/\A[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}\Z/)) { // check valid uuid
 
                                   fetch("https://" + hostString + "/api/chatbot/aadobjectWithToken", {
                                     method: "POST",
@@ -556,7 +556,7 @@
                                     throw Error("Search for contact returned no results.")
                                     } else {
 
-                                      if (result.value[0].id.test(/\A[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}\Z/)) { // check valid uuid
+                                      if (/^[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}$/.test(result.value[0].id)) { // check valid uuid
                                         fetch("https://" + hostString + "/api/chatbot/aadobjectWithToken", {
                                           method: "POST",
                                           body: {
