@@ -2,9 +2,9 @@
 <script type="text/javascript" src="Template.js"></script>
 <template>
     <style>
-    
-   
-        
+
+
+
         .pluginWrapper {
             display: none;
         }
@@ -102,7 +102,7 @@
                     if (currentUrl.includes("Plugin.aspx") && PWelement == 'MarvalSoftware.Plugins.Teams') {
 
                         var that = this;
-                      
+
 
                         $('#ctl00_ctl00_cph_maintenance_quickFields').hide();
 
@@ -261,8 +261,8 @@
     <div style="display:none;" id="additionalInstructions">
     <!-- <button type="button" style="cursor:pointer">Load Additional Instructions</button><br> <br> -->
     <span class="formSpan" style="vertical-align:middle; display:inline-block;">
-       
-       
+
+
         <p>In order to use the virtual agent, the contents of the following three text files will need to be placed into <b>Maintenance</b> | <b>Service</b> | <b>Self Service Customisation</b> under the AI Chatbot tab under the Private Key, Public Key and Code Snippet sections, respectively.</p>
 
         <a class="hrefButton" id="privatekeydownload" href="">Download Private Key</a>&nbsp;&nbsp;&nbsp; <a class="hrefButton" id="publickeydownload" href="">Download Public Key</a>&nbsp;&nbsp;&nbsp;
@@ -271,7 +271,7 @@
      <span class="formSpan">
          <!--   <button style="cursor:pointer;" id="testplugin">Test Teams Integration</button><br><br> -->
 
-           
+
             <div id="responseContainer">
                 <pre id="formattedResponse"></pre>
             </div>
@@ -671,8 +671,8 @@
                     var url = Teams._getPluginPath() + "Handler.ashx?endpoint=TenantID";
                     var tenantID = await (await fetch(url)).text();
                     $("body").append(`
-                    <div class="chatbot-container" style="display: flex; position: relative; z-index: 0; margin-left: auto; margin-bottom: 41px; height: -webkit-fill-available; width: 340px">
-                       <iframe id="chatbot-iframe" src="" title="Marval Chatbot" allow="camera; microphone" style="position: absolute; z-index: 1000; border: none; height: 100%; width: 100%"></iframe>
+                    <div class="chatbot-container" style="display: flex; position: relative; z-index: 1000; margin-left: auto; pointer-events: none; height: 100%; width: 400px; align-items: flex-end;">
+                       <iframe id="chatbot-iframe" src="" title="Marval Chatbot" allow="camera; microphone" style="pointer-events:auto;position: absolute; z-index: 1000; border: none; height: 600px; width: 100%"></iframe>
                     </div>
                     `);
 
