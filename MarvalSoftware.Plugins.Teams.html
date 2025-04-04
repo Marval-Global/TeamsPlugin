@@ -105,8 +105,8 @@
 
 
                         headerElem = $('#ctl00_ctl00_cph_entityHeaderText')
-                        headerElem.css("lineHeight", "20px")
-                        headerElem.css("height", "20px")
+                      //  headerElem.css("lineHeight", "20px")
+                      //  headerElem.css("height", "20px")
                         $('#ctl00_ctl00_cph_maintenance_quickFields').hide();
 
                         $('#ctl00_ctl00_cph_maintenance_globalSettingsRepeater_ctl00_value').prop('disabled', true);
@@ -124,7 +124,7 @@
                          console.log("Two versions are %s and %s ", pagePluginVersion, githubPluginVersion.Version);
                          if (pagePluginVersion == githubPluginVersion.Version) {
                          $('.content').before(`
-                             <div id="uptodatemessage" style="padding-left:60px;color:green !important;font-size:16px;font-weight:bold;display:none">Plugin is up to date!<br><br>
+                             <div id="uptodatemessage" style="padding-left:360px;color:green !important;font-size:16px;font-weight:bold;display:none">Plugin is up to date!<br><br>
                          `);
                          $('#uptodatemessage').fadeIn(250);
                          setTimeout(() => {
@@ -133,7 +133,7 @@
                          } else {
                              $('.content').before(`
                    <br> <div>
-                    <span style="padding-left:60px; color:red !important;font-weight:bold;font-size:16px" >Your plugin is not up to date, download the latest version <a href="https://github.com/Marval-Australia/TeamsPlugin/releases/latest/download/MarvalSoftware.Plugins.Teams.zip">here</a>
+                   <span style="position:absolute;padding-left:60px;z-index:1000; color:red !important;font-weight:bold;font-size:16px" >Your plugin is not up to date, download the latest version <a href="https://github.com/Marval-Australia/TeamsPlugin/releases/latest/download/MarvalSoftware.Plugins.Teams.zip">here</a>
                     </div><br><br>
 
                     `);
