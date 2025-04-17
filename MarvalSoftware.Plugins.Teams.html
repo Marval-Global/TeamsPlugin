@@ -642,7 +642,8 @@
 
                                 var aadObjectId = attrLabel.parent().find("span").text();
                                 console.log("Checking if attribute is a valid aadObjectID ", aadObjectId);
-                                if (aadObjectId.test(/\A[0-9a-fA-F]{12}4[0-9a-fA-F]{3}[89abAB][0-9a-fA-F]{15}\Z/)) { // check valid uuid
+                                const uuidV4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+                                if (uuidV4.test(aadObjectId)) {
                                     console.log("Attribute is a valid aadObjectID ", aadObjectId);
                                   fetch("https://" + hostString + "/api/chatbot/aadobjectWithToken", {
                                     method: "POST",
