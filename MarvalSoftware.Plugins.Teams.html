@@ -118,7 +118,7 @@
                        var region = $('#' + fieldID).val();
                        // console.log("Have region as ", region);
                        async function getLatestPluginVersion() {
-                         var url = "https://raw.githubusercontent.com/Marval-Australia/TeamsPlugin/refs/heads/main/manifest.json";
+                         var url = "https://raw.githubusercontent.com/Marval-Global/TeamsPlugin/refs/heads/main/manifest.json";
                          var githubPluginVersion = await (await fetch(url)).json();
                          var pagePluginVersion = $('#ctl00_ctl00_cph_maintenance_version').text();
                          console.log("Two versions are %s and %s ", pagePluginVersion, githubPluginVersion.Version);
@@ -133,7 +133,7 @@
                          } else {
                              $('.content').before(`
                    <br> <div>
-                   <span style="position:absolute;padding-left:60px;z-index:1000; color:red !important;font-weight:bold;font-size:16px" >Your plugin is not up to date, download the latest version <a href="https://github.com/Marval-Australia/TeamsPlugin/releases/latest/download/MarvalSoftware.Plugins.Teams.zip">here</a>
+                   <span style="position:absolute;padding-left:60px;z-index:1000; color:red !important;font-weight:bold;font-size:16px" >Your plugin is not up to date, download the latest version <a href="https://github.com/Marval-Global/TeamsPlugin/releases/latest/download/MarvalSoftware.Plugins.Teams.zip">here</a>
                     </div><br><br>
 
                     `);
