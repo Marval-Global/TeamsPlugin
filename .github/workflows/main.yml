@@ -13,7 +13,7 @@ jobs:
         id: vars
         run: cd ${{ github.workspace }} && echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Zip files
-        run: cd ${{ github.workspace }} && zip -x "*/.*" -r MarvalSoftware.Plugins.Teams.zip .
+        run: cd ${{ github.workspace }} && zip -x ".*" -r MarvalSoftware.Plugins.Teams.zip .
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
